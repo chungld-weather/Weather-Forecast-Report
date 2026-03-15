@@ -61,7 +61,7 @@ def get_weather_logic():
         api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
     if not api_key_wapi:
         api_key_wapi = config.get("api_keys", {}).get("weatherapi", "2e0e72f89ca04e66b9c151853253003")
-    return WeatherLogic(api_key_owm, api_key_wapi), config
+    return WeatherLogic(api_key=api_key_owm, weatherapi_key=api_key_wapi), config
 
 @st.cache_data
 def load_locations():
