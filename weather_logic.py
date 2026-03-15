@@ -208,9 +208,9 @@ class WeatherLogic:
                 print(f"Error in _fetch_weather_data_owm: {e}")
                 return None, None
 
-    def fetch_weather(self, lat, lon, source="OpenMeteo"):
+    def fetch_weather(self, lat, lon, source="Open-Meteo"):
         """Main entry point for fetching weather data."""
-        if source == "OpenMeteo":
+        if source == "Open-Meteo":
             return self._fetch_weather_data_openmeteo(lat, lon)
         elif source == "WeatherAPI.com":
             return self._fetch_weather_data_weatherapi(lat, lon)
