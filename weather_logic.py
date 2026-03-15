@@ -447,13 +447,13 @@ class WeatherLogic:
                         'humidity': hourly_data.get('relative_humidity_2m', [])[i],
                         'pressure': hourly_data.get('pressure_msl', [])[i],
                         'wind_speed': hourly_data.get('wind_speed_10m', [])[i], 'wind_gust': hourly_data.get('wind_gusts_10m', [])[i],
-                        'wind_direction': self._degrees_to_direction(hourly_data.get('wind_direction_10m', [])[i]),
+                        'wind_direction': self._deg_to_compass(hourly_data.get('wind_direction_10m', [])[i]),
                         'rain': rain, 'uv_index': hourly_data.get('uv_index', [])[i],
                         'pop': 100 if rain > 0 else 0, 'cloud_cover': hourly_data.get('cloud_cover', [])[i]
                     })
             return processed
 
-    def _degrees_to_direction(self, degrees):
+    def _deg_to_compass(self, degrees):
             if degrees is None or degrees == 'N/A':
                 return 'N/A'
             try:
