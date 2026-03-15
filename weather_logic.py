@@ -40,6 +40,7 @@ WMO_WEATHER_CODES_VIET = {0: "Trời quang", 1: "Chủ yếu quang mây", 2: "M�
 OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast"
 OPENMETEO_MARINE_API_URL = "https://marine-api.open-meteo.com/v1/marine"
 OPENMETEO_ARCHIVE_API_URL = "https://archive-api.open-meteo.com/v1/archive"
+WEATHERAPI_URL = "https://api.weatherapi.com/v1/forecast.json"
 APP_STYLESHEET = """
     QWidget {
         font-family: Arial, sans-serif;
@@ -116,8 +117,9 @@ def load_config():
             "dashboard_locations": [], "locations": {}}
 
 class WeatherLogic:
-    def __init__(self, api_key):
+    def __init__(self, api_key=None, weatherapi_key=None):
         self.api_key = api_key
+        self.weatherapi_key = weatherapi_key
         self.session = requests.Session()
 
     def _fetch_weather_data_owm(self, lat, lon):
@@ -179,6 +181,53 @@ class WeatherLogic:
             except Exception as e:
                 print(f"Error in _fetch_weather_data_owm: {e}")
                 return None, None
+
+    def _fetch_weather_data_weatherapi(self, lat, lon):
+            params = {
+                "key": self.weatherapi_key,
+                "q": f"{lat},{lon}",
+                "days": 14,
+                "aqi": "no",
+                "alerts": "no"
+            }
+            try:
+                response = self.session.get(WEATHERAPI_URL, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                location_info = {
+                    'name': data['location']['name'],
+                    'country': data['location']['country'],
+                    'timezone': data['location']['tz_id'],
+                    'sunrise': data['forecast']['forecastday'][0]['astro']['sunrise'],
+                    'sunset': data['forecast']['forecastday'][0]['astro']['sunset']
+                }
+                local_tz = pytz.timezone(location_info['timezone'])
+                processed_data = self._process_forecast_data_weatherapi(data['forecast']['forecastday'], local_tz)
+                return processed_data, location_info
+            except Exception as e:
+                print(f"Error in _fetch_weather_data_weatherapi: {e}")
+                return None, None
+
+    def _process_forecast_data_weatherapi(self, forecast_days, local_tz):
+            processed = []
+            for day in forecast_days:
+                for hour in day['hour']:
+                    dt_obj = datetime.fromtimestamp(hour['time_epoch'], tz=timezone.utc).astimezone(local_tz)
+                    processed.append({
+                        'datetime_obj': dt_obj,
+                        'datetime': dt_obj.strftime('%Y-%m-%d %H:%M'),
+                        'temperature': hour['temp_c'],
+                        'humidity': hour['humidity'],
+                        'wind_speed': hour['wind_kph'] * 0.539957,  # kph to knots
+                        'wind_gust': hour['gust_kph'] * 0.539957,
+                        'wind_direction': hour['wind_dir'],
+                        'description': hour['condition']['text'],
+                        'rain': hour['precip_mm'],
+                        'pop': hour['chance_of_rain'],
+                        'cloud_cover': hour['cloud'],
+                        'uv_index': hour['uv']
+                    })
+            return processed
 
     def _fetch_weather_data_openmeteo(self, lat, lon):
             params = {
@@ -773,7 +822,7 @@ class WeatherLogic:
 
             if weather_data:
                 # Set forecast section header based on data source
-                if api_source == "OpenMeteo":
+                if api_source in ["OpenMeteo", "WeatherAPI.com"]:
                     forecast_header = "Weather Forecast (Next 14 Days Hourly)"
                 else:
                     forecast_header = "Weather Forecast (Next 5 Days 03-Hourly)"
@@ -943,7 +992,7 @@ class WeatherLogic:
                 elements.append(Spacer(1, 0.1*inch))
 
             # --- NEW: Marine Forecast Section (for Open-Meteo only, specific locations) ---
-            if api_source == "OpenMeteo" and marine_data:
+            if api_source in ["OpenMeteo", "WeatherAPI.com"] and marine_data:
                 elements.append(
                     Paragraph("Marine Forecast (Next 14 Days Hourly)", h2_style))
 
@@ -1214,8 +1263,8 @@ class WeatherLogic:
 
             if weather_data:
                 # Set forecast section header based on data source
-                if api_source == "OpenMeteo":
-                    forecast_header_vn = "Dự Báo Thời Tiết (7 Ngày Tới Theo Giờ)"
+                if api_source in ["OpenMeteo", "WeatherAPI.com"]:
+                    forecast_header_vn = "Dự Báo Thời Tiết (14 Ngày Tới Theo Giờ)"
                 else:
                     forecast_header_vn = "Dự Báo Thời Tiết (5 Ngày Tới, Mỗi 3 Giờ)"
                 elements.append(
@@ -1258,7 +1307,10 @@ class WeatherLogic:
                 param_to_col_index = {'temperature': 2, 'humidity': 3, 'wind_speed': 4,
                                       'wind_gust': 5, 'rain': 7, 'pop': 8, 'uv_index': 9}
 
-                max_entries_for_table = 7 * 24
+                if api_source in ["OpenMeteo", "WeatherAPI.com"]:
+                    max_entries_for_table = 14 * 24
+                else:
+                    max_entries_for_table = 5 * 8
 
                 for row_idx, item in enumerate(weather_data[:max_entries_for_table]):
                     eng_desc = item.get('description', 'N/A')
@@ -1419,9 +1471,9 @@ class WeatherLogic:
                 elements.append(Spacer(1, 0.1*inch))
 
             # --- NEW: Marine Forecast Section (for Open-Meteo only, specific locations) in Vietnamese ---
-            if api_source == "OpenMeteo" and marine_data:
+            if api_source in ["OpenMeteo", "WeatherAPI.com"] and marine_data:
                 elements.append(
-                    Paragraph("Dự Báo Biển (7 Ngày Tới Theo Giờ)", h2_style))
+                    Paragraph("Dự Báo Biển (14 Ngày Tới Theo Giờ)", h2_style))
 
                 # --- BEGIN: Marine summary section (Vietnamese) ---
                 wave_heights = [item.get('wave_height') for item in marine_data if isinstance(

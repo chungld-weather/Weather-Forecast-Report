@@ -54,11 +54,14 @@ st.title("Weather Reporter")
 
 @st.cache_resource
 def get_weather_logic():
-    api_key = os.environ.get("OPENWEATHERMAP_API_KEY")
-    config = load_config()          # may be empty/absent on cloud (config.json gitignored)
-    if not api_key:
-        api_key = config.get("api_keys", {}).get("openweathermap", "")
-    return WeatherLogic(api_key), config
+    api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
+    api_key_wapi = os.environ.get("WEATHERAPI_KEY")
+    config = load_config()
+    if not api_key_owm:
+        api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
+    if not api_key_wapi:
+        api_key_wapi = config.get("api_keys", {}).get("weatherapi", "2e0e72f89ca04e66b9c151853253003")
+    return WeatherLogic(api_key_owm, api_key_wapi), config
 
 @st.cache_data
 def load_locations():
@@ -247,7 +250,7 @@ if st.session_state.selected_lat:
 
 col_ds, col_btn = st.columns([2, 1])
 with col_ds:
-    data_source = st.radio("Data Source:", ["Open-Meteo", "OpenWeatherMap"], horizontal=True)
+    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com"], index=1, horizontal=True)
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
@@ -262,10 +265,14 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
             if lat is not None and lon is not None:
                 w_data, l_info = logic._fetch_weather_data_owm(lat, lon)
                 m_data = None
-        else:
+        elif data_source == "WeatherAPI.com":
+            if lat is not None and lon is not None:
+                w_data, l_info = logic._fetch_weather_data_weatherapi(lat, lon)
+                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
+        else: # Open-Meteo
             if lat is not None and lon is not None:
                 w_data, l_info = logic._fetch_weather_data_openmeteo(lat, lon)
-                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone'])
+                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
         
         if lat and lon and w_data:
             st.session_state.weather_data = w_data
