@@ -250,7 +250,7 @@ if st.session_state.selected_lat:
 
 col_ds, col_btn = st.columns([2, 1])
 with col_ds:
-    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com", "MET Norway"], index=0, horizontal=True)
+    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com", "OpenWeatherMap", "MET Norway"], index=0, horizontal=True)
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
@@ -260,23 +260,8 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     lon = st.session_state.selected_lon
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
-        w_data, l_info, m_data = None, None, None
-        if data_source == "OpenWeatherMap":
-            if lat is not None and lon is not None:
-                w_data, l_info = logic._fetch_weather_data_owm(lat, lon)
-                m_data = None
-        elif data_source == "WeatherAPI.com":
-            if lat is not None and lon is not None:
-                w_data, l_info = logic._fetch_weather_data_weatherapi(lat, lon)
-                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
-        elif data_source == "MET Norway":
-            if lat is not None and lon is not None:
-                w_data, l_info = logic._fetch_weather_data_met_norway(lat, lon)
-                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
-        else: # Open-Meteo
-            if lat is not None and lon is not None:
-                w_data, l_info = logic._fetch_weather_data_openmeteo(lat, lon)
-                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
+        w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
+        m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
         
         if lat and lon and w_data:
             st.session_state.weather_data = w_data
@@ -306,8 +291,19 @@ if st.session_state.weather_data:
     except:
         local_tz = pytz.UTC
     now_local = datetime.datetime.now(local_tz)
-    current_point = min(w_data, key=lambda x: abs(x['datetime_obj'] - now_local.replace(tzinfo=local_tz)))
-    
+    current_point = min(w_data, key=lambda x: abs(x['datetime_obj'] - now_local))
+
+    # --- Local time display ---
+    tz_name = l_info.get('timezone', 'UTC')
+    utc_offset = now_local.strftime('%z')  # e.g. +0700
+    utc_label = f"UTC{utc_offset[:3]}:{utc_offset[3:]}"  # e.g. UTC+07:00
+    local_time_str = now_local.strftime("%H:%M, %d %b %Y")
+    st.markdown(
+        f"<span style='font-size:13px; color:#a0d8ff;'>🕐 Local time at location: "
+        f"<b>{local_time_str}</b> &nbsp;·&nbsp; {tz_name} ({utc_label})</span>",
+        unsafe_allow_html=True
+    )
+
     colC1, colC2, colC3, colC4 = st.columns(4)
     
     # 1. Temperature
@@ -373,8 +369,8 @@ if st.session_state.weather_data:
     colS4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
     colS4.metric("UV Index (Max)", uv_max)
     
-    current_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    st.markdown(f"**Location Info:** {l_info.get('name')} | **Timezone:** {l_info.get('timezone')} | **Sunrise:** {l_info.get('sunrise')} | **Sunset:** {l_info.get('sunset')} | **Current Time:** {current_time_str}")
+    current_time_str = now_local.strftime("%Y-%m-%d %H:%M:%S")
+    st.markdown(f"**Location Info:** {l_info.get('name')} | **Timezone:** {l_info.get('timezone')} | **Sunrise:** {l_info.get('sunrise')} | **Sunset:** {l_info.get('sunset')} | **Local Time:** {current_time_str}")
 
     # Sidebar Table
     # Bottom Section

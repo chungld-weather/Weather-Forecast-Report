@@ -122,6 +122,30 @@ class WeatherLogic:
         self.api_key = api_key
         self.weatherapi_key = weatherapi_key
         self.session = requests.Session()
+        self._tz_cache = {}
+
+    def _get_timezone_from_coords(self, lat, lon):
+        """Get timezone ID from coordinates using Open-Meteo as a fallback."""
+        cache_key = (round(lat, 2), round(lon, 2))
+        if cache_key in self._tz_cache:
+            return self._tz_cache[cache_key]
+            
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "temperature_2m",
+            "timezone": "auto",
+            "forecast_days": 1
+        }
+        try:
+            response = self.session.get(OPENMETEO_API_URL, params=params, timeout=10)
+            response.raise_for_status()
+            tz_id = response.json().get('timezone', DEFAULT_TIMEZONE)
+            self._tz_cache[cache_key] = tz_id
+            return tz_id
+        except Exception as e:
+            print(f"Error detecting timezone for ({lat}, {lon}): {e}")
+            return DEFAULT_TIMEZONE
 
     def _fetch_weather_data_owm(self, lat, lon):
             base_url = "https://api.openweathermap.org/data/2.5/"
@@ -138,26 +162,27 @@ class WeatherLogic:
                 forecast_response.raise_for_status()
                 forecast_data = forecast_response.json()
 
-                # Robust timezone handling
+                # Robust timezone handling: prefer country-code lookup, then
+                # coordinate-based detection (Open-Meteo timezone:auto), then
+                # raw UTC offset as a last resort.
                 timezone_str = DEFAULT_TIMEZONE
                 local_tz = None
                 country_code = current_data.get('sys', {}).get('country')
                 if country_code and country_code in LOCATION_TIMEZONES:
                     timezone_str = LOCATION_TIMEZONES[country_code]
-                elif 'timezone' in current_data:
-                    try:
-                        offset_sec = int(current_data['timezone'])
-                        now_utc = datetime.now(timezone.utc)
-                        for tz_name in pytz.common_timezones:
-                            tz = pytz.timezone(tz_name)
-                            if now_utc.astimezone(tz).utcoffset() == timedelta(seconds=offset_sec):
-                                timezone_str = tz_name
-                                break
-                        else:
+                else:
+                    # Use Open-Meteo timezone:auto — most accurate for any coords
+                    detected = self._get_timezone_from_coords(lat, lon)
+                    if detected and detected != DEFAULT_TIMEZONE:
+                        timezone_str = detected
+                    elif 'timezone' in current_data:
+                        # Last resort: build a fixed-offset tz from OWM offset
+                        try:
+                            offset_sec = int(current_data['timezone'])
                             local_tz = timezone(timedelta(seconds=offset_sec))
-                            timezone_str = f"UTC{offset_sec/3600:+03.0f}:00"
-                    except Exception as tz_err:
-                        print(f"Could not process OWM timezone offset: {tz_err}")
+                            timezone_str = f"UTC{offset_sec/3600:+.0f}:00"
+                        except Exception as tz_err:
+                            print(f"Could not process OWM timezone offset: {tz_err}")
 
                 if local_tz is None:
                     try:
@@ -182,6 +207,18 @@ class WeatherLogic:
             except Exception as e:
                 print(f"Error in _fetch_weather_data_owm: {e}")
                 return None, None
+
+    def fetch_weather(self, lat, lon, source="OpenMeteo"):
+        """Main entry point for fetching weather data."""
+        if source == "OpenMeteo":
+            return self._fetch_weather_data_openmeteo(lat, lon)
+        elif source == "WeatherAPI.com":
+            return self._fetch_weather_data_weatherapi(lat, lon)
+        elif source == "OpenWeatherMap":
+            return self._fetch_weather_data_owm(lat, lon)
+        elif source == "MET Norway":
+            return self._fetch_weather_data_met_norway(lat, lon)
+        return None, None
 
     def _fetch_weather_data_weatherapi(self, lat, lon):
             params = {
@@ -224,22 +261,24 @@ class WeatherLogic:
                 location_info = {
                     'name': f"Coords ({lat:.4f}, {lon:.4f})",
                     'country': 'N/A',
-                    'timezone': 'UTC', # Data is in UTC
+                    'timezone': self._get_timezone_from_coords(lat, lon),
                     'sunrise': 'N/A', # Not provided in this endpoint
                     'sunset': 'N/A'
                 }
                 
-                processed_forecast = self._process_forecast_data_met_norway(data)
+                local_tz = pytz.timezone(location_info['timezone'])
+                processed_forecast = self._process_forecast_data_met_norway(data, local_tz)
                 return processed_forecast, location_info
             except Exception as e:
                 print(f"Error in _fetch_weather_data_met_norway: {e}")
                 return None, None
 
-    def _process_forecast_data_met_norway(self, data):
+    def _process_forecast_data_met_norway(self, data, local_tz):
             processed = []
             for item in data['properties']['timeseries']:
                 dt_str = item['time']
-                dt_obj = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                dt_obj_utc = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                dt_obj = dt_obj_utc.astimezone(local_tz)
                 
                 # Standardize data
                 instant = item['data']['instant']['details']
@@ -341,8 +380,7 @@ class WeatherLogic:
                 processed_data = []
                 local_tz = pytz.timezone(timezone_str)
                 for i in range(len(data.get('time', []))):
-                    dt_obj = datetime.fromisoformat(
-                        data['time'][i]).astimezone(local_tz)
+                    dt_obj = local_tz.localize(datetime.fromisoformat(data['time'][i]))
                     processed_data.append({
                         'datetime_obj': dt_obj,
                         'datetime': dt_obj.strftime('%Y-%m-%d %H:%M'),
@@ -392,7 +430,7 @@ class WeatherLogic:
             now_local = datetime.now(local_tz)
             times = hourly_data.get('time', [])
             for i in range(len(times)):
-                local_time = datetime.fromisoformat(times[i]).astimezone(local_tz)
+                local_time = local_tz.localize(datetime.fromisoformat(times[i]))
                 if now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1):
                     # Use apparent_temperature if available, else fallback to temperature_2m
                     apparent_temp = hourly_data.get(
@@ -882,7 +920,7 @@ class WeatherLogic:
             elements.append(Paragraph(
                 f"<b>Sunrise:</b> {location_info.get('sunrise', 'N/A')}, <b>Sunset:</b> {location_info.get('sunset', 'N/A')}", normal_style))
             elements.append(Paragraph(
-                f"<b>Report Generated:</b> {datetime.now(pytz.timezone(location_info.get('timezone', DEFAULT_TIMEZONE))).strftime('%Y-%m-%d %H:%M:%S %Z')}", normal_style))
+                f"<b>Report Generated (Local):</b> {datetime.now(pytz.timezone(location_info.get('timezone', DEFAULT_TIMEZONE))).strftime('%Y-%m-%d %H:%M:%S %Z')}", normal_style))
             elements.append(
                 Paragraph(f"<b>Data Source:</b> {api_source}", normal_style))
             elements.append(Spacer(1, 0.2*inch))
@@ -1243,7 +1281,8 @@ class WeatherLogic:
                 safe_name = safe_name.replace(k, v)
             file_name_location = re.sub(
                 r'[\\/*?:"<>|()]+', "", safe_name).replace(' ', '_')
-            file_name = f"BaoCao_ThoiTiet_{api_source}_{file_name_location}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+            now_local = datetime.now(pytz.timezone(location_info.get("timezone", DEFAULT_TIMEZONE)))
+            file_name = f"BaoCao_ThoiTiet_{api_source}_{file_name_location}_{now_local.strftime('%Y%m%d_%H%M')}.pdf"
 
             doc = SimpleDocTemplate(
                 file_name,
