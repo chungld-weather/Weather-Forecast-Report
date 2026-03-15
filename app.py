@@ -292,39 +292,82 @@ if st.session_state.weather_data:
     l_info = st.session_state.location_info
     
     # Middle Section
-    st.header("Current Weather Summary")
+    # ── Current Weather Condition ──────────────────────────────────────────────────
+    st.header("⚡ Current Weather Condition")
     
-    # Calculate summary
+    # find closest hourly data to now
+    import pytz
+    try:
+        local_tz = pytz.timezone(l_info.get('timezone', 'UTC'))
+    except:
+        local_tz = pytz.UTC
+    now_local = datetime.datetime.now(local_tz)
+    current_point = min(w_data, key=lambda x: abs(x['datetime_obj'] - now_local.replace(tzinfo=local_tz)))
+    
+    colC1, colC2, colC3, colC4 = st.columns(4)
+    
+    # 1. Temperature
+    temp_b64 = get_base64_image("icons/temp.png")
+    colC1.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
+    curr_temp = current_point.get('temperature', 0)
+    colC1.metric("Temperature", f"{curr_temp:.1f}°C")
+    
+    # 2. Wind Speed
+    wind_b64 = get_base64_image("icons/wind.png")
+    colC2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
+    curr_wind = current_point.get('wind_speed', 0)
+    colC2.metric("Wind Speed", f"{curr_wind:.1f} knots")
+    
+    # 3. Rain
+    rain_b64 = get_base64_image("icons/rain.png")
+    colC3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
+    curr_rain = current_point.get('rain', 0)
+    colC3.metric("Rain", f"{curr_rain:.1f} mm")
+    
+    # 4. UV Index
+    uv_b64 = get_base64_image("icons/UV.png")
+    colC4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
+    curr_uv = current_point.get('uv_index', 0)
+    colC4.metric("UV Index", f"{curr_uv:.1f}")
+    
+    st.markdown("---")
+    
+    # ── Precipitation Map ──────────────────────────────────────────────────────────
+    st.header("🗺️ Precipitation Map")
+    windy_url = f"https://embed.windy.com/embed2.html?lat={st.session_state.lat}&lon={st.session_state.lon}&zoom=5&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=1&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1"
+    st.components.v1.iframe(windy_url, height=500, scrolling=True)
+    
+    st.markdown("---")
+    
+    # ── Weather Forecast Summary ──────────────────────────────────────────────────
+    st.header("📊 Weather Forecast Summary")
+    
+    # Calculate summary from forecast data
     temp_vals = [item.get('temperature') for item in w_data if isinstance(item.get('temperature'), (int, float))]
     wind_vals = [item.get('wind_speed') for item in w_data if isinstance(item.get('wind_speed'), (int, float))]
+    rain_vals = [item.get('rain') for item in w_data if isinstance(item.get('rain'), (int, float))]
+    uv_vals = [item.get('uv_index') for item in w_data if isinstance(item.get('uv_index'), (int, float))]
     
     temp_min = f"{min(temp_vals):.1f}°C" if temp_vals else "N/A"
     temp_max = f"{max(temp_vals):.1f}°C" if temp_vals else "N/A"
-    wind_min = f"{min(wind_vals):.1f} knots" if wind_vals else "N/A"
-    wind_max = f"{max(wind_vals):.1f} knots" if wind_vals else "N/A"
+    wind_min = f"{min(wind_vals):.1f}" if wind_vals else "N/A"
+    wind_max = f"{max(wind_vals):.1f}" if wind_vals else "N/A"
+    rain_max = f"{max(rain_vals):.1f} mm" if rain_vals else "N/A"
+    uv_max = f"{max(uv_vals):.1f}" if uv_vals else "N/A"
     
-    colA, colB, colC, colD = st.columns(4)
+    colS1, colS2, colS3, colS4 = st.columns(4)
     
-    temp_b64 = get_base64_image("icons/temp.png")
-    colA.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
-    colA.metric("Temperature", f"{temp_min} - {temp_max}")
+    colS1.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
+    colS1.metric("Temp (Min-Max)", f"{temp_min} - {temp_max}")
     
-    wind_b64 = get_base64_image("icons/wind.png")
-    colB.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
-    colB.metric("Wind Speed", f"{wind_min} - {wind_max}")
-    if st.session_state.api_source == "Open-Meteo":
-        rain_vals = [item.get('rain') for item in w_data if isinstance(item.get('rain'), (int, float))]
-        uv_vals = [item.get('uv_index') for item in w_data if isinstance(item.get('uv_index'), (int, float))]
-        rain_max = f"{max(rain_vals):.1f} mm/h" if rain_vals else "N/A"
-        uv_max = f"{max(uv_vals):.1f}" if uv_vals else "N/A"
-        
-        rain_b64 = get_base64_image("icons/rain.png")
-        colC.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
-        colC.metric("Rain (Max)", rain_max)
-        
-        uv_b64 = get_base64_image("icons/UV.png")
-        colD.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
-        colD.metric("UV Index (Max)", uv_max)
+    colS2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
+    colS2.metric("Wind (Min-Max)", f"{wind_min} - {wind_max} kn")
+    
+    colS3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
+    colS3.metric("Rain (Max)", rain_max)
+    
+    colS4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
+    colS4.metric("UV Index (Max)", uv_max)
     
     current_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.markdown(f"**Location Info:** {l_info.get('name')} | **Timezone:** {l_info.get('timezone')} | **Sunrise:** {l_info.get('sunrise')} | **Sunset:** {l_info.get('sunset')} | **Current Time:** {current_time_str}")
@@ -334,7 +377,7 @@ if st.session_state.weather_data:
     st.header("Charts")
     df = pd.DataFrame(w_data)
 
-    def plot_custom_chart(df_plot, title, cols, colors, units=None):
+    def plot_custom_chart(df_plot, title, cols, colors, units=None, descriptions=None):
         # Ensure datetime is parsed
         if not pd.api.types.is_datetime64_any_dtype(df_plot.index):
             df_plot.index = pd.to_datetime(df_plot.index)
@@ -363,14 +406,21 @@ if st.session_state.weather_data:
         
         fig = go.Figure()
         for t in traces:
-            fig.add_trace(go.Scatter(
+            scatter_kwargs = dict(
                 x=df_plot.index,
                 y=t['data'],
                 mode='lines',
                 name=t['col'],
                 line=dict(color=t['color'], width=2),
-                hovertemplate=f'%{{y:.1f}}{t["unit_str"]}<extra></extra>'
-            ))
+            )
+            
+            if descriptions is not None:
+                scatter_kwargs['customdata'] = descriptions
+                scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]} (%{{customdata}})<extra></extra>'
+            else:
+                scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]}<extra></extra>'
+                
+            fig.add_trace(go.Scatter(**scatter_kwargs))
                     
         y_max_range = max_val * 1.1 if max_val != -float('inf') else None
         
@@ -407,7 +457,7 @@ if st.session_state.weather_data:
 
     st.subheader("Temperature & Humidity")
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
-        ['temperature', 'humidity'], ['#EB4C4C', 'white'],
+        ['temperature', 'humidity'], ['#EB4C4C', 'cyan'],
         units=['°C', '%'])
     
     st.subheader("Wind Speed & Gust")
@@ -423,9 +473,10 @@ if st.session_state.weather_data:
         units=rain_units)
     
     if 'cloud_cover' in df.columns:
-        st.subheader("Cloud Cover")
-        plot_custom_chart(df.set_index('datetime'), "Cloud Cover",
-            ['cloud_cover'], ['lightgray'], units=['%'])
+        st.subheader("Cloud Cover & Weather Description")
+        plot_custom_chart(df.set_index('datetime'), "Cloud Cover & Weather Description",
+            ['cloud_cover'], ['pink'], units=['%'], 
+            descriptions=df['description'].tolist())
         
     if 'uv_index' in df.columns:
         st.subheader("UV Index")
@@ -452,30 +503,64 @@ if st.session_state.weather_data:
         cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'pop']
     df_display = df[[c for c in cols if c in df.columns]].copy()
     
+    # Add units to headers
+    col_map = {
+        'datetime': 'Date/Time',
+        'description': 'Description',
+        'temperature': 'Temp (°C)',
+        'humidity': 'Hum (%)',
+        'wind_speed': 'Wind (kn)',
+        'wind_gust': 'Gust (kn)',
+        'wind_direction': 'Wind Dir',
+        'rain': 'Rain (mm)',
+        'pop': 'PoP (%)',
+        'uv_index': 'UV'
+    }
+    df_display.rename(columns=col_map, inplace=True)
+    
     # Render table via HTML for complete styling control (font size + lightblue hover)
     html_table = df_display.to_html(classes="custom-table", index=False, justify='left', escape=False)
     
     html_template = f"""
 <style>
+.table-container {{
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #444;
+    border-radius: 8px;
+}}
 .custom-table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 16px; 
-    margin-bottom: 2rem;
+    font-size: 15px; 
+    color: white;
+}}
+.custom-table thead th {{
+    position: sticky;
+    top: 0;
+    background-color: #333;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
 }}
 .custom-table th, .custom-table td {{
-    padding: 8px 12px;
-    border: 1px solid #444; 
+    padding: 10px 14px;
+    border: 1px solid #444;
+    text-align: left;
+}}
+/* Adjust Description column width (2nd col) */
+.custom-table th:nth-child(2), .custom-table td:nth-child(2) {{
+    min-width: 180px;
+}}
+/* Adjust Wind Direction column width (7th col) */
+.custom-table th:nth-child(7), .custom-table td:nth-child(7) {{
+    min-width: 60px;
+    max-width: 80px;
 }}
 .custom-table tr:hover {{
-    background-color: lightgreen !important;
-    color: black !important;
-}}
-.custom-table tr:hover td {{
-    color: black !important;
+    background-color: rgba(0, 255, 255, 0.1) !important;
 }}
 </style>
-<div style="max-height: 400px; overflow-y: auto;">
+<div class="table-container">
 {html_table}
 </div>
 """
