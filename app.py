@@ -250,7 +250,7 @@ if st.session_state.selected_lat:
 
 col_ds, col_btn = st.columns([2, 1])
 with col_ds:
-    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com"], index=1, horizontal=True)
+    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com"], index=0, horizontal=True)
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
