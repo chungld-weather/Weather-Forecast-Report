@@ -299,7 +299,7 @@ if st.session_state.weather_data:
     utc_label = f"UTC{utc_offset[:3]}:{utc_offset[3:]}"  # e.g. UTC+07:00
     local_time_str = now_local.strftime("%H:%M, %d %b %Y")
     st.markdown(
-        f"<span style='font-size:13px; color:#a0d8ff;'>🕐 Local time at location: "
+        f"<span style='font-size:14px; color:#a0d8ff;'>🕐 Local time at location: "
         f"<b>{local_time_str}</b> &nbsp;·&nbsp; {tz_name} ({utc_label})</span>",
         unsafe_allow_html=True
     )
@@ -475,7 +475,7 @@ if st.session_state.weather_data:
     if 'cloud_cover' in df.columns:
         st.subheader("Cloud Cover & Weather Description")
         plot_custom_chart(df.set_index('datetime'), "Cloud Cover & Weather Description",
-            ['cloud_cover'], ['pink'], units=['%'], 
+            ['cloud_cover'], ['#FF3E9B'], units=['%'], 
             descriptions=df['description'].tolist())
         
     if 'uv_index' in df.columns:
