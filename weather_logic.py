@@ -385,14 +385,14 @@ class WeatherLogic:
                         'datetime_obj': dt_obj,
                         'datetime': dt_obj.strftime('%Y-%m-%d %H:%M'),
                         'wave_height': data['wave_height'][i],
-                        'wave_direction': self._degrees_to_direction(data['wave_direction'][i]),
+                        'wave_direction': self._deg_to_compass(data['wave_direction'][i]),
                         'wave_period': data['wave_period'][i],
                         'sea_level': data.get('sea_level', [None]*len(data.get('time', [])))[i],
                         'wind_wave_height': data['wind_wave_height'][i],
-                        'wind_wave_direction': self._degrees_to_direction(data['wind_wave_direction'][i]),
+                        'wind_wave_direction': self._deg_to_compass(data['wind_wave_direction'][i]),
                         'wind_wave_period': data['wind_wave_period'][i],
                         'swell_wave_height': data['swell_wave_height'][i],
-                        'swell_wave_direction': self._degrees_to_direction(data['swell_wave_direction'][i]),
+                        'swell_wave_direction': self._deg_to_compass(data['swell_wave_direction'][i]),
                         'swell_wave_period': data['swell_wave_period'][i],
                     })
                 return processed_data
@@ -419,7 +419,7 @@ class WeatherLogic:
                         'pressure': main_data.get('pressure'),
                         'wind_speed': round(item.get('wind', {}).get('speed', 0) * 1.94384, 1),
                         'wind_gust': round(item.get('wind', {}).get('gust', 0) * 1.94384, 1),
-                        'wind_direction': self._degrees_to_direction(item.get('wind', {}).get('deg')),
+                        'wind_direction': self._deg_to_compass(item.get('wind', {}).get('deg')),
                         'rain': item.get('rain', {}).get('3h', 0.0), 'visibility': item.get('visibility'),
                         'pop': round(item.get('pop', 0.0) * 100), 'cloud_cover': item.get('clouds', {}).get('all')
                     })
