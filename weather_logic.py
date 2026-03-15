@@ -40,6 +40,7 @@ WMO_WEATHER_CODES_VIET = {0: "Trời quang", 1: "Chủ yếu quang mây", 2: "M�
 OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast"
 OPENMETEO_MARINE_API_URL = "https://marine-api.open-meteo.com/v1/marine"
 OPENMETEO_ARCHIVE_API_URL = "https://archive-api.open-meteo.com/v1/archive"
+MET_NORWAY_API_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 WEATHERAPI_URL = "https://api.weatherapi.com/v1/forecast.json"
 APP_STYLESHEET = """
     QWidget {
@@ -207,6 +208,72 @@ class WeatherLogic:
             except Exception as e:
                 print(f"Error in _fetch_weather_data_weatherapi: {e}")
                 return None, None
+
+    def _fetch_weather_data_met_norway(self, lat, lon):
+            """Fetch forecast from MET Norway (Locationforecast 2.0)."""
+            headers = {
+                'User-Agent': 'WeatherReporter/1.0 (https://github.com/USER/Weather-Reporter)'
+            }
+            params = {'lat': f"{lat:.4f}", 'lon': f"{lon:.4f}"}
+            try:
+                response = self.session.get(MET_NORWAY_API_URL, params=params, headers=headers, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                
+                # MET Norway doesn't provide location name in this endpoint
+                location_info = {
+                    'name': f"Coords ({lat:.4f}, {lon:.4f})",
+                    'country': 'N/A',
+                    'timezone': 'UTC', # Data is in UTC
+                    'sunrise': 'N/A', # Not provided in this endpoint
+                    'sunset': 'N/A'
+                }
+                
+                processed_forecast = self._process_forecast_data_met_norway(data)
+                return processed_forecast, location_info
+            except Exception as e:
+                print(f"Error in _fetch_weather_data_met_norway: {e}")
+                return None, None
+
+    def _process_forecast_data_met_norway(self, data):
+            processed = []
+            for item in data['properties']['timeseries']:
+                dt_str = item['time']
+                dt_obj = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                
+                # Standardize data
+                instant = item['data']['instant']['details']
+                # MET Norway units: temp (C), wind (m/s), humidity (%), cloud (%), rain (mm)
+                # Convert wind m/s to knots: 1 m/s = 1.94384 knots
+                wind_speed_ms = instant.get('wind_speed', 0)
+                wind_gust_ms = instant.get('wind_speed_of_gust', wind_speed_ms)
+                
+                # Next 1h precipitation
+                rain_1h = 0.0
+                summary_1h = "Clear sky"
+                if 'next_1_hours' in item['data']:
+                    rain_1h = item['data']['next_1_hours']['details'].get('precipitation_amount', 0.0)
+                    summary_1h = item['data']['next_1_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
+                elif 'next_6_hours' in item['data']:
+                    # Fallback if 1h is missing
+                    rain_1h = item['data']['next_6_hours']['details'].get('precipitation_amount', 0.0) / 6.0
+                    summary_1h = item['data']['next_6_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
+
+                processed.append({
+                    'datetime': dt_obj.strftime("%Y-%m-%d %H:%M"),
+                    'datetime_obj': dt_obj,
+                    'temperature': instant.get('air_temperature'),
+                    'humidity': instant.get('relative_humidity'),
+                    'wind_speed': wind_speed_ms * 1.94384,
+                    'wind_gust': wind_gust_ms * 1.94384,
+                    'wind_direction': self._deg_to_compass(instant.get('wind_from_direction', 0)),
+                    'rain': rain_1h,
+                    'pop': 0.0, # Not directly provided as % in compact
+                    'cloud_cover': instant.get('cloud_area_fraction'),
+                    'uv_index': 0.0, # Not in compact
+                    'description': summary_1h
+                })
+            return processed
 
     def _process_forecast_data_weatherapi(self, forecast_days, local_tz):
             processed = []

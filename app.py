@@ -250,7 +250,7 @@ if st.session_state.selected_lat:
 
 col_ds, col_btn = st.columns([2, 1])
 with col_ds:
-    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com"], index=0, horizontal=True)
+    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com", "MET Norway"], index=0, horizontal=True)
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
@@ -268,6 +268,10 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
         elif data_source == "WeatherAPI.com":
             if lat is not None and lon is not None:
                 w_data, l_info = logic._fetch_weather_data_weatherapi(lat, lon)
+                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
+        elif data_source == "MET Norway":
+            if lat is not None and lon is not None:
+                w_data, l_info = logic._fetch_weather_data_met_norway(lat, lon)
                 m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
         else: # Open-Meteo
             if lat is not None and lon is not None:
@@ -361,7 +365,7 @@ if st.session_state.weather_data:
     colS1.metric("Temp (Min-Max)", f"{temp_min} - {temp_max}")
     
     colS2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
-    colS2.metric("Wind (Min-Max)", f"{wind_min} - {wind_max} kn")
+    colS2.metric("Wind (Min-Max)", f"{wind_min} - {wind_max} knots")
     
     colS3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
     colS3.metric("Rain (Max)", rain_max)
@@ -509,8 +513,8 @@ if st.session_state.weather_data:
         'description': 'Description',
         'temperature': 'Temp (°C)',
         'humidity': 'Hum (%)',
-        'wind_speed': 'Wind (kn)',
-        'wind_gust': 'Gust (kn)',
+        'wind_speed': 'Wind (knots)',
+        'wind_gust': 'Gust (knots)',
         'wind_direction': 'Wind Dir',
         'rain': 'Rain (mm)',
         'pop': 'PoP (%)',
