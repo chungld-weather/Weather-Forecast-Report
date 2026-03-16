@@ -55,13 +55,10 @@ st.title("Weather Reporter")
 @st.cache_resource
 def get_weather_logic():
     api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
-    api_key_wapi = os.environ.get("WEATHERAPI_KEY")
     config = load_config()
     if not api_key_owm:
         api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
-    if not api_key_wapi:
-        api_key_wapi = config.get("api_keys", {}).get("weatherapi", "2e0e72f89ca04e66b9c151853253003")
-    return WeatherLogic(api_key=api_key_owm, weatherapi_key=api_key_wapi), config
+    return WeatherLogic(api_key=api_key_owm), config
 
 @st.cache_data
 def load_locations():
@@ -250,7 +247,9 @@ if st.session_state.selected_lat:
 
 col_ds, col_btn = st.columns([2, 1])
 with col_ds:
-    data_source = st.radio("Data Source:", ["Open-Meteo", "WeatherAPI.com", "OpenWeatherMap", "MET Norway"], index=0, horizontal=True)
+    data_source = st.radio("Select Data Source:",
+                       ["Open-Meteo", "OpenWeatherMap", "MET Norway"],
+                       index=0, horizontal=True)
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
