@@ -405,7 +405,7 @@ class WeatherLogic:
         """Convert degrees to compass direction (standardized)."""
         return self._deg_to_compass(degrees)
 
-    def generate_excel_report(self, lat, lon, forecast_data, location_info, ui_location_name, api_source="OpenMeteo"):
+    def generate_excel_report(self, lat, lon, forecast_data, location_info, ui_location_name, api_source="OpenMeteo", marine_data=None):
         """Generate Excel weather report."""
         file_name_location = re.sub(r'[\\/*?:"<>|()]+', "", ui_location_name).replace(' ', '_')
         file_name = f"Weather_Report_{api_source}_{file_name_location}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
