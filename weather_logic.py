@@ -1049,10 +1049,12 @@ class WeatherLogic:
             elements.append(Spacer(1, 0.2*inch))
 
             if weather_data:
-                # Set forecast section header
-                if api_source == "OpenMeteo":
-                    forecast_header = "Weather Forecast (Next 14 Days Hourly)"
-                else:
+                # Set forecast section header based on data source
+                if api_source == "Open-Meteo":
+                    forecast_header = "Weather Forecast (Next 14 Days - Hourly)"
+                elif api_source == "MET Norway":
+                    forecast_header = "Weather Forecast (Next 10 Days - Hourly)"
+                else:  # OpenWeatherMap
                     forecast_header = "Weather Forecast (Next 5 Days 03-Hourly)"
                 elements.append(
                     Paragraph(forecast_header, h2_style))
@@ -1493,10 +1495,12 @@ class WeatherLogic:
             elements.append(Spacer(1, 0.2*inch))
 
             if weather_data:
-                # Set forecast section header
-                if api_source == "OpenMeteo":
-                    forecast_header_vn = "Dự báo thời tiết (Chi tiết 14 ngày tới - 1h/bản tin)"
-                else:
+                # Set forecast section header based on data source
+                if api_source == "Open-Meteo":
+                    forecast_header_vn = "Dự báo thời tiết (Chi tiết 14 ngày tới - Mỗi giờ)"
+                elif api_source == "MET Norway":
+                    forecast_header_vn = "Dự Báo Thời Tiết (10 Ngày Tới - Mỗi giờ)"
+                else:  # OpenWeatherMap
                     forecast_header_vn = "Dự Báo Thời Tiết (5 Ngày Tới, Mỗi 3 Giờ)"
                 elements.append(
                     Paragraph(forecast_header_vn, h2_style))
