@@ -24,78 +24,79 @@ import math
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
 import matplotlib
+
 UNITS = {'precipitation': 'mm'}
 VIETNAMESE_FONT_NAME, VIETNAMESE_FONT_NAME_BOLD = 'Helvetica', 'Helvetica-Bold'
-LOCATION_TIMEZONES = {'VN': 'Asia/Ho_Chi_Minh', 'ID': 'Asia/Jakarta', 'MY': 'Asia/Kuala_Lumpur', 'SG': 'Asia/Singapore', 'TH': 'Asia/Bangkok', 'PH': 'Asia/Manila', 'CN': 'Asia/Shanghai', 'JP': 'Asia/Tokyo', 'KR': 'Asia/Seoul', 'TW': 'Asia/Taipei', 'HK': 'Asia/Hong_Kong', 'IN': 'Asia/Kolkata', 'PK': 'Asia/Karachi', 'BD': 'Asia/Dhaka', 'LK': 'Asia/Colombo', 'NP': 'Asia/Kathmandu', 'AE': 'Asia/Dubai', 'SA': 'Asia/Riyadh', 'QA': 'Asia/Qatar', 'IL': 'Asia/Jerusalem', 'TR': 'Europe/Istanbul', 'GB': 'Europe/London', 'DE': 'Europe/Berlin', 'FR': 'Europe/Paris', 'IT': 'Europe/Rome', 'ES': 'Europe/Madrid', 'PT': 'Europe/Lisbon', 'NL': 'Europe/Amsterdam', 'BE': 'Europe/Brussels', 'CH': 'Europe/Zurich', 'SE': 'Europe/Stockholm',
-                      'NO': 'Europe/Oslo', 'DK': 'Europe/Copenhagen', 'FI': 'Europe/Helsinki', 'PL': 'Europe/Warsaw', 'AT': 'Europe/Vienna', 'GR': 'Europe/Athens', 'IE': 'Europe/Dublin', 'RU': 'Europe/Moscow', 'US': 'America/New_York', 'CA': 'America/Toronto', 'MX': 'America/Mexico_City', 'PA': 'America/Panama', 'CR': 'America/Costa_Rica', 'GT': 'America/Guatemala', 'BR': 'America/Sao_Paulo', 'AR': 'America/Buenos_Aires', 'CL': 'America/Santiago', 'CO': 'America/Bogota', 'PE': 'America/Lima', 'VE': 'America/Caracas', 'AU': 'Australia/Sydney', 'NZ': 'Pacific/Auckland', 'FJ': 'Pacific/Fiji', 'ZA': 'Africa/Johannesburg', 'EG': 'Africa/Cairo', 'MA': 'Africa/Casablanca', 'NG': 'Africa/Lagos', 'KE': 'Africa/Nairobi', 'ET': 'Africa/Addis_Ababa'}
+LOCATION_TIMEZONES = {
+    'VN': 'Asia/Ho_Chi_Minh', 'ID': 'Asia/Jakarta', 'MY': 'Asia/Kuala_Lumpur', 'SG': 'Asia/Singapore',
+    'TH': 'Asia/Bangkok', 'PH': 'Asia/Manila', 'CN': 'Asia/Shanghai', 'JP': 'Asia/Tokyo',
+    'KR': 'Asia/Seoul', 'TW': 'Asia/Taipei', 'HK': 'Asia/Hong_Kong', 'IN': 'Asia/Kolkata',
+    'PK': 'Asia/Karachi', 'BD': 'Asia/Dhaka', 'LK': 'Asia/Colombo', 'NP': 'Asia/Kathmandu',
+    'AE': 'Asia/Dubai', 'SA': 'Asia/Riyadh', 'QA': 'Asia/Qatar', 'IL': 'Asia/Jerusalem',
+    'TR': 'Europe/Istanbul', 'GB': 'Europe/London', 'DE': 'Europe/Berlin', 'FR': 'Europe/Paris',
+    'IT': 'Europe/Rome', 'ES': 'Europe/Madrid', 'PT': 'Europe/Lisbon', 'NL': 'Europe/Amsterdam',
+    'BE': 'Europe/Brussels', 'CH': 'Europe/Zurich', 'SE': 'Europe/Stockholm', 'NO': 'Europe/Oslo',
+    'DK': 'Europe/Copenhagen', 'FI': 'Europe/Helsinki', 'PL': 'Europe/Warsaw', 'AT': 'Europe/Vienna',
+    'GR': 'Europe/Athens', 'IE': 'Europe/Dublin', 'RU': 'Europe/Moscow', 'US': 'America/New_York',
+    'CA': 'America/Toronto', 'MX': 'America/Mexico_City', 'PA': 'America/Panama', 'CR': 'America/Costa_Rica',
+    'GT': 'America/Guatemala', 'BR': 'America/Sao_Paulo', 'AR': 'America/Buenos_Aires', 'CL': 'America/Santiago',
+    'CO': 'America/Bogota', 'PE': 'America/Lima', 'VE': 'America/Caracas', 'AU': 'Australia/Sydney',
+    'NZ': 'Pacific/Auckland', 'FJ': 'Pacific/Fiji', 'ZA': 'Africa/Johannesburg', 'EG': 'Africa/Cairo',
+    'MA': 'Africa/Casablanca', 'NG': 'Africa/Lagos', 'KE': 'Africa/Nairobi', 'ET': 'Africa/Addis_Ababa'
+}
 DEFAULT_TIMEZONE = 'Asia/Ho_Chi_Minh'
-WEATHER_DESC_VIET = {'Clear sky': 'Trời quang', 'Few clouds': 'Ít mây', 'Scattered clouds': 'Mây rải rác', 'Broken clouds': 'Nhiều mây', 'Overcast clouds': 'Trời u ám', 'Light rain': 'Mưa nhẹ', 'Moderate rain': 'Mưa vừa', 'Heavy intensity rain': 'Mưa to', 'Very heavy rain': 'Mưa rất to', 'Extreme rain': 'Mưa cực lớn', 'Freezing rain': 'Mưa đông đá', 'Light intensity shower rain': 'Mưa rào nhẹ', 'Shower rain': 'Mưa rào', 'Heavy intensity shower rain': 'Mưa rào nặng hạt', 'Ragged shower rain': 'Mưa rào không đều', 'Thunderstorm with light rain': 'Dông kèm mưa nhẹ', 'Thunderstorm with rain': 'Dông kèm mưa', 'Thunderstorm with heavy rain': 'Dông kèm mưa to', 'Light thunderstorm': 'Dông nhẹ', 'Thunderstorm': 'Dông', 'Heavy thunderstorm': 'Dông mạnh', 'Ragged thunderstorm': 'Dông không đều', 'Thunderstorm with light drizzle': 'Dông kèm mưa phùn nhẹ', 'Thunderstorm with drizzle': 'Dông kèm mưa phùn', 'Thunderstorm with heavy drizzle': 'Dông kèm mưa phùn nặng hạt',
-                     'Light intensity drizzle': 'Mưa phùn nhẹ', 'Drizzle': 'Mưa phùn', 'Heavy intensity drizzle': 'Mưa phùn nặng hạt', 'Light intensity drizzle rain': 'Mưa phùn/mưa nhẹ', 'Drizzle rain': 'Mưa phùn/mưa', 'Heavy intensity drizzle rain': 'Mưa phùn/mưa nặng hạt', 'Shower rain and drizzle': 'Mưa rào và mưa phùn', 'Heavy shower rain and drizzle': 'Mưa rào to và mưa phùn', 'Shower drizzle': 'Mưa phùn dạng mưa rào', 'Light snow': 'Tuyết nhẹ', 'Snow': 'Tuyết', 'Heavy snow': 'Tuyết dày', 'Sleet': 'Mưa tuyết', 'Light shower sleet': 'Mưa tuyết nhẹ', 'Shower sleet': 'Mưa tuyết', 'Light rain and snow': 'Mưa và tuyết nhẹ', 'Rain and snow': 'Mưa và tuyết', 'Light shower snow': 'Tuyết rơi nhẹ', 'Shower snow': 'Tuyết rơi', 'Heavy shower snow': 'Tuyết rơi dày', 'Mist': 'Sương mù nhẹ', 'Smoke': 'Khói', 'Haze': 'Bụi mù', 'Sand/ dust whirls': 'Xoáy cát/bụi', 'Fog': 'Sương mù', 'Sand': 'Cát', 'Dust': 'Bụi', 'Volcanic ash': 'Tro núi lửa', 'Squalls': 'Gió giật mạnh', 'Tornado': 'Lốc xoáy', 'N/A': 'Không xác định'}
-WIND_DIR_VIET = {'N': 'B', 'NNE': 'BĐB', 'NE': 'ĐB', 'ENE': 'ĐĐB', 'E': 'Đ', 'ESE': 'ĐĐN', 'SE': 'ĐN', 'SSE': 'NĐN',
-                 'S': 'N', 'SSW': 'NTN', 'SW': 'TN', 'WSW': 'TTN', 'W': 'T', 'WNW': 'TTB', 'NW': 'TB', 'NNW': 'BTB', 'N/A': 'N/A'}
-WMO_WEATHER_CODES_EN = {0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle", 56: "Light freezing drizzle", 57: "Dense freezing drizzle", 61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 66: "Light freezing rain",
-                        67: "Heavy freezing rain", 71: "Light snow fall", 73: "Moderate snow fall", 75: "Heavy snow fall", 77: "Snow grains", 80: "Slight showers", 81: "Moderate showers", 82: "Violent showers", 85: "Slight snow showers", 86: "Heavy snow showers", 95: "Thunderstorm (slight/moderate)", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail"}
-WMO_WEATHER_CODES_VIET = {0: "Trời quang", 1: "Chủ yếu quang mây", 2: "Mây rải rác", 3: "Trời nhiều mây", 45: "Sương mù", 48: "Sương mù có sương giá", 51: "Mưa phùn nhẹ", 53: "Mưa phùn vừa", 55: "Mưa phùn nặng hạt", 56: "Mưa phùn nhẹ kèm đông đá", 57: "Mưa phùn nặng hạt kèm đông đá", 61: "Mưa nhẹ", 63: "Mưa vừa",
-                          65: "Mưa to", 66: "Mưa nhẹ kèm đông đá", 67: "Mưa to kèm đông đá", 71: "Tuyết rơi nhẹ", 73: "Tuyết rơi vừa", 75: "Tuyết rơi dày", 77: "Hạt tuyết", 80: "Mưa rào nhẹ", 81: "Mưa rào vừa", 82: "Mưa rào dữ dội", 85: "Mưa tuyết nhẹ", 86: "Mưa tuyết dày", 95: "Dông (nhẹ/vừa)", 96: "Dông kèm mưa đá nhỏ", 99: "Dông kèm mưa đá lớn"}
+WEATHER_DESC_VIET = {
+    'Clear sky': 'Trời quang', 'Few clouds': 'Ít mây', 'Scattered clouds': 'Mây rải rác',
+    'Broken clouds': 'Nhiều mây', 'Overcast clouds': 'Trời u ám', 'Light rain': 'Mưa nhẹ',
+    'Moderate rain': 'Mưa vừa', 'Heavy intensity rain': 'Mưa to', 'Very heavy rain': 'Mưa rất to',
+    'Extreme rain': 'Mưa cực lớn', 'Freezing rain': 'Mưa đông đá', 'Light intensity shower rain': 'Mưa rào nhẹ',
+    'Shower rain': 'Mưa rào', 'Heavy intensity shower rain': 'Mưa rào nặng hạt', 'Ragged shower rain': 'Mưa rào không đều',
+    'Thunderstorm with light rain': 'Dông kèm mưa nhẹ', 'Thunderstorm with rain': 'Dông kèm mưa',
+    'Thunderstorm with heavy rain': 'Dông kèm mưa to', 'Light thunderstorm': 'Dông nhẹ', 'Thunderstorm': 'Dông',
+    'Heavy thunderstorm': 'Dông mạnh', 'Ragged thunderstorm': 'Dông không đều',
+    'Thunderstorm with light drizzle': 'Dông kèm mưa phùn nhẹ', 'Thunderstorm with drizzle': 'Dông kèm mưa phùn',
+    'Thunderstorm with heavy drizzle': 'Dông kèm mưa phùn nặng hạt', 'Light intensity drizzle': 'Mưa phùn nhẹ',
+    'Drizzle': 'Mưa phùn', 'Heavy intensity drizzle': 'Mưa phùn nặng hạt', 'Light intensity drizzle rain': 'Mưa phùn/mưa nhẹ',
+    'Drizzle rain': 'Mưa phùn/mưa', 'Heavy intensity drizzle rain': 'Mưa phùn/mưa nặng hạt',
+    'Shower rain and drizzle': 'Mưa rào và mưa phùn', 'Heavy shower rain and drizzle': 'Mưa rào to và mưa phùn',
+    'Shower drizzle': 'Mưa phùn dạng mưa rào', 'Light snow': 'Tuyết nhẹ', 'Snow': 'Tuyết', 'Heavy snow': 'Tuyết dày',
+    'Sleet': 'Mưa tuyết', 'Light shower sleet': 'Mưa tuyết nhẹ', 'Shower sleet': 'Mưa tuyết',
+    'Light rain and snow': 'Mưa và tuyết nhẹ', 'Rain and snow': 'Mưa và tuyết', 'Light shower snow': 'Tuyết rơi nhẹ',
+    'Shower snow': 'Tuyết rơi', 'Heavy shower snow': 'Tuyết rơi dày', 'Mist': 'Sương mù nhẹ', 'Smoke': 'Khói',
+    'Haze': 'Bụi mù', 'Sand/ dust whirls': 'Xoáy cát/bụi', 'Fog': 'Sương mù', 'Sand': 'Cát', 'Dust': 'Bụi',
+    'Volcanic ash': 'Tro núi lửa', 'Squalls': 'Gió giật mạnh', 'Tornado': 'Lốc xoáy', 'N/A': 'Không xác định'
+}
+WIND_DIR_VIET = {
+    'N': 'B', 'NNE': 'BĐB', 'NE': 'ĐB', 'ENE': 'ĐĐB', 'E': 'Đ', 'ESE': 'ĐĐN', 'SE': 'ĐN', 'SSE': 'NĐN',
+    'S': 'N', 'SSW': 'NTN', 'SW': 'TN', 'WSW': 'TTN', 'W': 'T', 'WNW': 'TTB', 'NW': 'TB', 'NNW': 'BTB', 'N/A': 'N/A'
+}
+WMO_WEATHER_CODES_EN = {
+    0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Depositing rime fog",
+    51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle", 56: "Light freezing drizzle",
+    57: "Dense freezing drizzle", 61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 66: "Light freezing rain",
+    67: "Heavy freezing rain", 71: "Light snow fall", 73: "Moderate snow fall", 75: "Heavy snow fall",
+    77: "Snow grains", 80: "Slight showers", 81: "Moderate showers", 82: "Violent showers", 85: "Slight snow showers",
+    86: "Heavy snow showers", 95: "Thunderstorm (slight/moderate)", 96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail"
+}
+WMO_WEATHER_CODES_VIET = {
+    0: "Trời quang", 1: "Chủ yếu quang mây", 2: "Mây rải rác", 3: "Trời nhiều mây", 45: "Sương mù",
+    48: "Sương mù có sương giá", 51: "Mưa phùn nhẹ", 53: "Mưa phùn vừa", 55: "Mưa phùn nặng hạt",
+    56: "Mưa phùn nhẹ kèm đông đá", 57: "Mưa phùn nặng hạt kèm đông đá", 61: "Mưa nhẹ", 63: "Mưa vừa", 65: "Mưa to",
+    66: "Mưa nhẹ kèm đông đá", 67: "Mưa to kèm đông đá", 71: "Tuyết rơi nhẹ", 73: "Tuyết rơi vừa", 75: "Tuyết rơi dày",
+    77: "Hạt tuyết", 80: "Mưa rào nhẹ", 81: "Mưa rào vừa", 82: "Mưa rào dữ dội", 85: "Mưa tuyết nhẹ",
+    86: "Mưa tuyết dày", 95: "Dông (nhẹ/vừa)", 96: "Dông kèm mưa đá nhỏ", 99: "Dông kèm mưa đá lớn"
+}
 OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast"
 OPENMETEO_MARINE_API_URL = "https://marine-api.open-meteo.com/v1/marine"
 OPENMETEO_ARCHIVE_API_URL = "https://archive-api.open-meteo.com/v1/archive"
 MET_NORWAY_API_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
-APP_STYLESHEET = """
-    QWidget {
-        font-family: Arial, sans-serif;
-    }
-    QGroupBox {
-        font-size: 11pt;
-        font-weight: bold;
-        border: 1px solid #CCC;
-        border-radius: 5px;
-        margin-top: 10px;
-    }
-    QGroupBox::title {
-        subcontrol-origin: margin;
-        subcontrol-position: top left;
-        padding: 0 5px;
-    }
-    QPushButton {
-        font-size: 10pt;
-        font-weight: bold;
-        padding: 8px;
-        background-color: #a7fcfd;
-        color: black;
-        border: 1px solid #888;
-        border-radius: 4px;
-    }
-    QPushButton:hover {
-        background-color: #90e0e1;
-    }
-    QPushButton:pressed {
-        background-color: #79c6c7;
-    }
-"""
-COLOR_SCALES = {
-    'precipitation': {
-        'min': 0,
-        'max': 20,
-        'colors': [
-            (214, 236, 255), (0, 191, 255), (0, 255, 0),
-            (255, 255, 0), (255, 215, 0), (255, 165, 0),
-            (255, 69, 0), (255, 0, 0), (211, 0, 148),
-            (255, 0, 255), (148, 0, 211)
-        ]
-    }
-}
 
 def resource_path(relative_path):
-    """Return path to a bundled read-only asset (icons, Pictures, fonts).
-    When frozen by PyInstaller the assets live in sys._MEIPASS (_internal/).
-    When running normally, they live beside this script."""
     base = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base, relative_path)
 
 def user_data_path(relative_path):
-    """Return path for user-writable files (config.json, output reports).
-    Always resolved beside the executable (or script when not frozen)."""
     if getattr(sys, 'frozen', False):
         base = os.path.dirname(sys.executable)
     else:
@@ -109,12 +110,8 @@ def load_config():
             with open(cfg_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading config.json: {e}")
-    
-    # Return default empty config if file doesn't exist or is invalid
-    # Avoid creating/writing the file automatically to support read-only environments
-    return {"api_key_openweathermap": "YOUR_API_KEY_HERE",
-            "dashboard_locations": [], "locations": {}}
+            print(f"Error loading config: {e}")
+    return {"api_key_openweathermap": "", "locations": {}}
 
 class WeatherLogic:
     def __init__(self, api_key=None):
@@ -123,18 +120,10 @@ class WeatherLogic:
         self._tz_cache = {}
 
     def _get_timezone_from_coords(self, lat, lon):
-        """Get timezone ID from coordinates using Open-Meteo as a fallback."""
         cache_key = (round(lat, 2), round(lon, 2))
         if cache_key in self._tz_cache:
             return self._tz_cache[cache_key]
-            
-        params = {
-            "latitude": lat,
-            "longitude": lon,
-            "hourly": "temperature_2m",
-            "timezone": "auto",
-            "forecast_days": 1
-        }
+        params = {"latitude": lat, "longitude": lon, "hourly": "temperature_2m", "timezone": "auto", "forecast_days": 1}
         try:
             response = self.session.get(OPENMETEO_API_URL, params=params, timeout=10)
             response.raise_for_status()
@@ -142,7 +131,7 @@ class WeatherLogic:
             self._tz_cache[cache_key] = tz_id
             return tz_id
         except Exception as e:
-            print(f"Error detecting timezone for ({lat}, {lon}): {e}")
+            print(f"Error detecting timezone: {e}")
             return DEFAULT_TIMEZONE
 
     def _fetch_weather_data_owm(self, lat, lon):
