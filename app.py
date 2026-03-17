@@ -55,6 +55,11 @@ st.title("Weather Reporter")
 @st.cache_resource
 def get_weather_logic():
     api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
+    if not api_key_owm:
+        try:
+            api_key_owm = st.secrets.get("OPENWEATHERMAP_API_KEY", "")
+        except Exception:
+            pass
     config = load_config()
     if not api_key_owm:
         api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
