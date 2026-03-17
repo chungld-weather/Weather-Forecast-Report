@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from weather_logic import WeatherLogic, load_config
+import weather_logic as logic
 import os
 import io
 import datetime
@@ -52,14 +52,6 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {
 
 st.title("Weather Reporter")
 
-@st.cache_resource
-def get_weather_logic():
-    api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
-    config = load_config()
-    if not api_key_owm:
-        api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
-    return WeatherLogic(api_key=api_key_owm), config
-
 @st.cache_data
 def load_locations():
     """Load location list from locations.json (committed to git — no secrets inside)."""
@@ -70,7 +62,7 @@ def load_locations():
             return json.load(f)
     return {"locations": {}, "default_location": "", "dashboard_locations": []}
 
-logic, config_data = get_weather_logic()
+config_data = logic.load_config()
 locations_data = load_locations()
 
 
@@ -260,7 +252,8 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
         w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
-        m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
+        # marine data is only for Open-Meteo in this logic
+        m_data = logic.fetch_marine_data(lat, lon, l_info['timezone']) if l_info and data_source == "Open-Meteo" else None
         
         if lat and lon and w_data:
             st.session_state.weather_data = w_data
@@ -373,126 +366,47 @@ if st.session_state.weather_data:
 
     # Sidebar Table
     # Bottom Section
+    # Bottom Section
     st.header("Charts")
-    df = pd.DataFrame(w_data)
-
-    def plot_custom_chart(df_plot, title, cols, colors, units=None, descriptions=None):
-        # Ensure datetime is parsed
-        if not pd.api.types.is_datetime64_any_dtype(df_plot.index):
-            df_plot.index = pd.to_datetime(df_plot.index)
-        
-        if units is None:
-            units = [''] * len(cols)
-        
-        # Build traces list, then sort by descending mean y so the highest
-        # line on the chart always appears first in the unified hover tooltip
-        traces = []
-        max_val = -float('inf')
-        for col, color, unit in zip(cols, colors, units):
-            if col in df_plot.columns:
-                unit_str = f' {unit}' if unit else ''
-                mean_y = df_plot[col].mean()
-                traces.append(dict(
-                    col=col, color=color, mean_y=mean_y,
-                    unit_str=unit_str, data=df_plot[col]
-                ))
-                local_max = df_plot[col].max()
-                if local_max > max_val:
-                    max_val = local_max
-        
-        # Sort descending by mean value so hover label order matches visual order
-        traces.sort(key=lambda t: t['mean_y'], reverse=True)
-        
-        fig = go.Figure()
-        for t in traces:
-            scatter_kwargs = dict(
-                x=df_plot.index,
-                y=t['data'],
-                mode='lines',
-                name=t['col'],
-                line=dict(color=t['color'], width=2),
-            )
-            
-            if descriptions is not None:
-                scatter_kwargs['customdata'] = descriptions
-                scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]} (%{{customdata}})<extra></extra>'
-            else:
-                scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]}<extra></extra>'
-                
-            fig.add_trace(go.Scatter(**scatter_kwargs))
-                    
-        y_max_range = max_val * 1.1 if max_val != -float('inf') else None
-        
-        tickvals = df_plot.index[df_plot.index.hour.isin([7, 19])]
-        ticktext = tickvals.strftime('%m-%d %H:%M')
-        
-        fig.update_layout(
-            title=dict(text=title, font=dict(size=18)),
-            xaxis=dict(
-                tickmode='array',
-                tickvals=tickvals,
-                ticktext=ticktext,
-                tickangle=-45,
-                showgrid=True,
-                gridcolor='rgba(128, 128, 128, 0.2)',
-                tickfont=dict(size=13),
-                title_font=dict(size=14)
-            ),
-            yaxis=dict(
-                range=[None, y_max_range] if y_max_range is not None else None,
-                showgrid=True,
-                gridcolor='rgba(128, 128, 128, 0.2)',
-                tickfont=dict(size=13),
-                title_font=dict(size=14)
-            ),
-            legend=dict(font=dict(size=13)),
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            hovermode="x unified",
-            margin=dict(l=40, r=20, t=40, b=40)
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-
+    
     st.subheader("Temperature & Humidity")
-    plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
-        ['temperature', 'humidity'], ['#EB4C4C', 'cyan'],
-        units=['°C', '%'])
+    temp_hum_chart = logic.create_temp_humidity_chart(w_data)
+    if temp_hum_chart:
+        st.image(temp_hum_chart)
     
     st.subheader("Wind Speed & Gust")
-    plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
-        ['wind_speed', 'wind_gust'], ['green', 'orange'],
-        units=['knots', 'knots'])
+    wind_chart = logic.create_wind_chart(w_data)
+    if wind_chart:
+        st.image(wind_chart)
     
-    st.subheader("Rain & PoP")
-    rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
-    rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
-    plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
-        rain_cols, ['blue', 'purple'],
-        units=rain_units)
+    st.subheader("Rain & Probability of Precipitation")
+    rain_chart = logic.create_chart(w_data, 'rain', 'Rain (mm)', 'Rainfall Trend', color='blue')
+    if rain_chart:
+        st.image(rain_chart)
     
-    if 'cloud_cover' in df.columns:
-        st.subheader("Cloud Cover & Weather Description")
-        plot_custom_chart(df.set_index('datetime'), "Cloud Cover & Weather Description",
-            ['cloud_cover'], ['#FF3E9B'], units=['%'], 
-            descriptions=df['description'].tolist())
+    pop_chart = logic.create_chart(w_data, 'pop', 'PoP (%)', 'Precipitation Probability', color='purple')
+    if pop_chart:
+        st.image(pop_chart)
         
-    if 'uv_index' in df.columns:
+    if 'cloud_cover' in pd.DataFrame(w_data).columns:
+        st.subheader("Cloud Cover")
+        cloud_chart = logic.create_chart(w_data, 'cloud_cover', 'Cloud (%)', 'Cloud Cover Trend', color='grey')
+        if cloud_chart:
+            st.image(cloud_chart)
+        
+    if 'uv_index' in pd.DataFrame(w_data).columns:
         st.subheader("UV Index")
-        plot_custom_chart(df.set_index('datetime'), "UV Index",
-            ['uv_index'], ['gold'], units=[''])
+        uv_chart = logic.create_chart(w_data, 'uv_index', 'UV Index', 'UV Index Trend', color='gold')
+        if uv_chart:
+            st.image(uv_chart)
         
     if st.session_state.api_source == "Open-Meteo" and st.session_state.marine_data:
-        df_marine = pd.DataFrame(st.session_state.marine_data)
-        st.subheader("Wave & Swell Height")
-        plot_custom_chart(df_marine.set_index('datetime'), "Wave Height",
-            ['wave_height', 'swell_wave_height'], ['dodgerblue', 'mediumblue'],
-            units=['m', 'm'])
-        
-        st.subheader("Wave & Swell Period")
-        plot_custom_chart(df_marine.set_index('datetime'), "Wave Period",
-            ['wave_period', 'swell_wave_period'], ['magenta', 'gold'],
-            units=['s', 's'])
+        st.subheader("Marine Data (Wave & Swell)")
+        h_chart, p_chart = logic.create_combined_wave_chart(st.session_state.marine_data)
+        if h_chart:
+            st.image(h_chart)
+        if p_chart:
+            st.image(p_chart)
 
     st.markdown("---")
     st.header("Data Table")
