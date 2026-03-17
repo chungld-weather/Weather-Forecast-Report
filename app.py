@@ -258,6 +258,15 @@ with col_ds:
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
+# ── Caching API Calls ──────────────────────────────────────────────────────────
+@st.cache_data(ttl=1800, show_spinner=False)
+def get_cached_weather(lat, lon, source):
+    return logic.fetch_weather(lat, lon, source=source)
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def get_cached_marine(lat, lon, timezone_str):
+    return logic._fetch_marine_data_openmeteo(lat, lon, timezone_str)
+
 # ── Fetch Logic ────────────────────────────────────────────────────────────────
 if fetch_btn or (not st.session_state.weather_data and st.session_state.selected_lat):
     lat = st.session_state.selected_lat
@@ -265,7 +274,7 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
         try:
-            w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
+            w_data, l_info = get_cached_weather(lat, lon, data_source)
         except Exception as fetch_err:
             import traceback
             st.error(f"Exception during fetch: {fetch_err}")
@@ -274,7 +283,7 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
         m_data = None
         if w_data and l_info and l_info.get('timezone'):
             try:
-                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone'])
+                m_data = get_cached_marine(lat, lon, l_info['timezone'])
             except Exception as e:
                 print(f"Marine data fetch failed: {e}")
         
@@ -293,13 +302,20 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
                 err_detail += f", w_data len={len(w_data) if hasattr(w_data, '__len__') else 'N/A'}"
             if l_info is not None and isinstance(l_info, dict):
                 if '_error' in l_info:
-                    err_detail += f", ERROR: {l_info['_error']}"
+                    err_msg = l_info['_error']
+                    if '429' in err_msg or 'Too Many Requests' in err_msg:
+                        st.warning("⚠️ **Open-Meteo API Rate Limit Exceeded** \n\nStreamlit Cloud shares IP addresses, so the free Open-Meteo limit (10,000 calls/day per IP) is often reached by other users. \n\n**Solution:** Please select '**OpenWeatherMap**' or '**MET Norway**' as your Data Source above.")
+                    else:
+                        st.error(f"Failed to fetch data from {data_source}. Error: {err_msg}")
+                    err_detail += f", ERROR: {err_msg}"
                 else:
                     err_detail += f", l_info keys={list(l_info.keys())}"
             else:
                 err_detail += ", l_info=None"
             print(f"FETCH FAILED: {err_detail}")
-            st.error(f"Failed to fetch data. Debug: {err_detail}")
+            if "Rate Limit Exceeded" not in err_detail and "429" not in err_detail:
+                st.error(f"Failed to fetch data. Debug: {err_detail}")
+
 
 
 if st.session_state.weather_data:
