@@ -479,7 +479,7 @@ if st.session_state.weather_data:
             margin=dict(l=40, r=20, t=40, b=40)
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     st.subheader("Temperature & Humidity")
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
