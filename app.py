@@ -465,8 +465,8 @@ if st.session_state.weather_data:
                 except:
                     return f"rgba(255, 255, 255, {alpha})" # Fallback white glow
                     
-            glow_color_1 = make_rgba(hex_color, 0.15)
-            glow_color_2 = make_rgba(hex_color, 0.05)
+            glow_color_1 = make_rgba(hex_color, 0.25) # Strengthened from 0.15
+            glow_color_2 = make_rgba(hex_color, 0.10) # Strengthened from 0.05
 
             scatter_kwargs = dict(
                 x=df_plot.index,
@@ -534,42 +534,42 @@ if st.session_state.weather_data:
 
     st.subheader("Temperature & Humidity")
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
-        ['temperature', 'humidity'], ['#EB4C4C', 'cyan'],
+        ['temperature', 'humidity'], ['cyan', 'yellow'],
         units=['°C', '%'])
     
     st.subheader("Wind Speed & Gust")
     plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
-        ['wind_speed', 'wind_gust'], ['green', 'orange'],
+        ['wind_speed', 'wind_gust'], ['cyan', 'yellow'],
         units=['knots', 'knots'])
     
     st.subheader("Rain & PoP")
     rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
     rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
     plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
-        rain_cols, ['blue', 'purple'],
+        rain_cols, ['cyan', 'yellow'] if 'rain' in df.columns else ['cyan'],
         units=rain_units)
     
     if 'cloud_cover' in df.columns:
         st.subheader("Cloud Cover & Weather Description")
         plot_custom_chart(df.set_index('datetime'), "Cloud Cover & Weather Description",
-            ['cloud_cover'], ['#FF3E9B'], units=['%'], 
+            ['cloud_cover'], ['cyan'], units=['%'], 
             descriptions=df['description'].tolist())
         
     if 'uv_index' in df.columns:
         st.subheader("UV Index")
         plot_custom_chart(df.set_index('datetime'), "UV Index",
-            ['uv_index'], ['gold'], units=[''])
+            ['uv_index'], ['yellow'], units=[''])
         
     if st.session_state.api_source == "Open-Meteo" and st.session_state.marine_data:
         df_marine = pd.DataFrame(st.session_state.marine_data)
         st.subheader("Wave & Swell Height")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Height",
-            ['wave_height', 'swell_wave_height'], ['dodgerblue', 'mediumblue'],
+            ['wave_height', 'swell_wave_height'], ['cyan', 'yellow'],
             units=['m', 'm'])
         
         st.subheader("Wave & Swell Period")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Period",
-            ['wave_period', 'swell_wave_period'], ['magenta', 'gold'],
+            ['wave_period', 'swell_wave_period'], ['cyan', 'yellow'],
             units=['s', 's'])
 
     st.markdown("---")
