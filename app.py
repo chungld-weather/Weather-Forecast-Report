@@ -456,7 +456,7 @@ if st.session_state.weather_data:
                 if len(hex_str) == 3:
                      hex_str = ''.join(c + c for c in hex_str)
                 # Map some color names used in the app safely if not hex
-                color_map = {'cyan': '#00FFFF', 'green': '#008000', 'orange': '#FFA500', 'blue': '#0000FF', 'purple': '#800080'}
+                color_map = {'cyan': '#00FFFF', 'green': '#008000', 'orange': '#FFA500', 'blue': '#0000FF', 'purple': '#800080', 'hotpink': '#FF69B4', '#FF00FF': '#FF00FF'}
                 if hex_str in color_map:
                     hex_str = color_map[hex_str].lstrip('#')
                 try:
@@ -465,29 +465,39 @@ if st.session_state.weather_data:
                 except:
                     return f"rgba(255, 255, 255, {alpha})" # Fallback white glow
                     
-            glow_color_1 = make_rgba(hex_color, 0.15) # Softer inner glow
-            glow_color_2 = make_rgba(hex_color, 0.02) # Faint outer glow
+            glow_color_1 = make_rgba(hex_color, 0.15) # Inner glow
+            glow_color_2 = make_rgba(hex_color, 0.03) # Faint outer glow
+            fill_color   = make_rgba(hex_color, 0.05) # Very subtle fill
 
             scatter_kwargs = dict(
                 x=df_plot.index,
                 y=t['data'],
                 mode='lines',
                 name=t['col'],
-                line=dict(color=t['color'], width=2),
+                line=dict(color=t['color'], width=2, shape='spline'),
                 showlegend=True
             )
             
-            # Add outer glow (widest, most transparent)
+            # Subtle fill below curve
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
-                line=dict(color=glow_color_2, width=12),
+                line=dict(width=0, shape='spline'),
+                fill='tozeroy',
+                fillcolor=fill_color,
                 hoverinfo='skip', showlegend=False
             ))
             
-            # Add inner glow (medium width)
+            # Add outer glow
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
-                line=dict(color=glow_color_1, width=6),
+                line=dict(color=glow_color_2, width=8, shape='spline'),
+                hoverinfo='skip', showlegend=False
+            ))
+            
+            # Add inner glow
+            fig.add_trace(go.Scatter(
+                x=df_plot.index, y=t['data'], mode='lines',
+                line=dict(color=glow_color_1, width=4, shape='spline'),
                 hoverinfo='skip', showlegend=False
             ))
             
@@ -534,19 +544,19 @@ if st.session_state.weather_data:
 
     st.subheader("Temperature & Humidity")
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
-        ['temperature', 'humidity'], ['cyan', 'hotpink'],
+        ['temperature', 'humidity'], ['cyan', '#FF00FF'],
         units=['°C', '%'])
     
     st.subheader("Wind Speed & Gust")
     plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
-        ['wind_speed', 'wind_gust'], ['cyan', 'hotpink'],
+        ['wind_speed', 'wind_gust'], ['cyan', '#FF00FF'],
         units=['knots', 'knots'])
     
     st.subheader("Rain & PoP")
     rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
     rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
     plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
-        rain_cols, ['cyan', 'hotpink'] if 'rain' in df.columns else ['cyan'],
+        rain_cols, ['cyan', '#FF00FF'] if 'rain' in df.columns else ['cyan'],
         units=rain_units)
     
     if 'cloud_cover' in df.columns:
@@ -558,18 +568,18 @@ if st.session_state.weather_data:
     if 'uv_index' in df.columns:
         st.subheader("UV Index")
         plot_custom_chart(df.set_index('datetime'), "UV Index",
-            ['uv_index'], ['hotpink'], units=[''])
+            ['uv_index'], ['#FF00FF'], units=[''])
         
     if st.session_state.api_source == "Open-Meteo" and st.session_state.marine_data:
         df_marine = pd.DataFrame(st.session_state.marine_data)
         st.subheader("Wave & Swell Height")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Height",
-            ['wave_height', 'swell_wave_height'], ['cyan', 'hotpink'],
+            ['wave_height', 'swell_wave_height'], ['cyan', '#FF00FF'],
             units=['m', 'm'])
         
         st.subheader("Wave & Swell Period")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Period",
-            ['wave_period', 'swell_wave_period'], ['cyan', 'hotpink'],
+            ['wave_period', 'swell_wave_period'], ['cyan', '#FF00FF'],
             units=['s', 's'])
 
     st.markdown("---")
