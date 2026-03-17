@@ -310,8 +310,8 @@ class WeatherLogic:
             except Exception as e:
                 import traceback
                 error_trace = traceback.format_exc()
-                print(f"Error in _fetch_weather_data_openmeteo: {e}")
-                return None, {'error': str(e), 'trace': error_trace}
+                print(f"Error in _fetch_weather_data_openmeteo: {e}\n{error_trace}")
+                return None, None
 
     def _fetch_marine_data_openmeteo(self, lat, lon, timezone_str):
         params = {"latitude": lat, "longitude": lon, "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_direction,wind_wave_period,swell_wave_height,swell_wave_direction,swell_wave_period",

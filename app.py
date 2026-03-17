@@ -265,7 +265,12 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
         w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
-        m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone']) if l_info else None
+        m_data = None
+        if w_data and l_info and l_info.get('timezone'):
+            try:
+                m_data = logic._fetch_marine_data_openmeteo(lat, lon, l_info['timezone'])
+            except Exception as e:
+                print(f"Marine data fetch failed: {e}")
         
         if lat and lon and w_data:
             st.session_state.weather_data = w_data
