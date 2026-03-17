@@ -264,7 +264,13 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     lon = st.session_state.selected_lon
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
-        w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
+        try:
+            w_data, l_info = logic.fetch_weather(lat, lon, source=data_source)
+        except Exception as fetch_err:
+            import traceback
+            st.error(f"Exception during fetch: {fetch_err}")
+            print(f"FETCH EXCEPTION: {traceback.format_exc()}")
+            w_data, l_info = None, None
         m_data = None
         if w_data and l_info and l_info.get('timezone'):
             try:
@@ -282,7 +288,15 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
             st.session_state.ui_location_name = location
             st.success("Data fetched successfully!")
         else:
-            st.error("Failed to fetch data or location not found.")
+            err_detail = f"lat={lat}, lon={lon}, w_data type={type(w_data).__name__}"
+            if w_data is not None:
+                err_detail += f", w_data len={len(w_data) if hasattr(w_data, '__len__') else 'N/A'}"
+            if l_info is not None:
+                err_detail += f", l_info keys={list(l_info.keys()) if isinstance(l_info, dict) else type(l_info).__name__}"
+            else:
+                err_detail += ", l_info=None"
+            print(f"FETCH FAILED: {err_detail}")
+            st.error(f"Failed to fetch data or location not found. Debug: {err_detail}")
 
 
 if st.session_state.weather_data:
