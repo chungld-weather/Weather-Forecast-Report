@@ -448,13 +448,48 @@ if st.session_state.weather_data:
         
         fig = go.Figure()
         for t in traces:
+            hex_color = t['color']
+            
+            # Helper to quickly make a semi-transparent version of the hex color
+            def make_rgba(hex_str, alpha):
+                hex_str = hex_str.lstrip('#')
+                if len(hex_str) == 3:
+                     hex_str = ''.join(c + c for c in hex_str)
+                # Map some color names used in the app safely if not hex
+                color_map = {'cyan': '#00FFFF', 'green': '#008000', 'orange': '#FFA500', 'blue': '#0000FF', 'purple': '#800080'}
+                if hex_str in color_map:
+                    hex_str = color_map[hex_str].lstrip('#')
+                try:
+                    rgb = tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+                    return f"rgba({rgb[0]}, {rgb[1]}, {rgb[2]}, {alpha})"
+                except:
+                    return f"rgba(255, 255, 255, {alpha})" # Fallback white glow
+                    
+            glow_color_1 = make_rgba(hex_color, 0.15)
+            glow_color_2 = make_rgba(hex_color, 0.05)
+
             scatter_kwargs = dict(
                 x=df_plot.index,
                 y=t['data'],
                 mode='lines',
                 name=t['col'],
                 line=dict(color=t['color'], width=2),
+                showlegend=True
             )
+            
+            # Add outer glow (widest, most transparent)
+            fig.add_trace(go.Scatter(
+                x=df_plot.index, y=t['data'], mode='lines',
+                line=dict(color=glow_color_2, width=12),
+                hoverinfo='skip', showlegend=False
+            ))
+            
+            # Add inner glow (medium width)
+            fig.add_trace(go.Scatter(
+                x=df_plot.index, y=t['data'], mode='lines',
+                line=dict(color=glow_color_1, width=6),
+                hoverinfo='skip', showlegend=False
+            ))
             
             if descriptions is not None:
                 scatter_kwargs['customdata'] = descriptions
