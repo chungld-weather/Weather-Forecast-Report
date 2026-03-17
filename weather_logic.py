@@ -124,8 +124,9 @@ class WeatherLogic:
         if cache_key in self._tz_cache:
             return self._tz_cache[cache_key]
         params = {"latitude": lat, "longitude": lon, "hourly": "temperature_2m", "timezone": "auto", "forecast_days": 1}
+        headers = {'User-Agent': 'WeatherReporter/1.0 (https://github.com/USER/Weather-Reporter)'}
         try:
-            response = self.session.get(OPENMETEO_API_URL, params=params, timeout=10)
+            response = self.session.get(OPENMETEO_API_URL, params=params, headers=headers, timeout=10)
             response.raise_for_status()
             tz_id = response.json().get('timezone', DEFAULT_TIMEZONE)
             self._tz_cache[cache_key] = tz_id
@@ -287,9 +288,10 @@ class WeatherLogic:
                 "wind_speed_unit": "kn",
                 "precipitation_unit": "mm"
             }
+            headers = {'User-Agent': 'WeatherReporter/1.0 (https://github.com/USER/Weather-Reporter)'}
             try:
                 response = self.session.get(
-                    OPENMETEO_API_URL, params=params, timeout=30)
+                    OPENMETEO_API_URL, params=params, headers=headers, timeout=30)
                 response.raise_for_status()
                 data = response.json()
                 location_info = {'name': f"Coords ({lat:.4f}, {lon:.4f})", 'country': 'N/A',
@@ -306,39 +308,44 @@ class WeatherLogic:
                     data.get('hourly', {}), local_tz)
                 return processed_data, location_info
             except Exception as e:
+                import traceback
+                error_trace = traceback.format_exc()
                 print(f"Error in _fetch_weather_data_openmeteo: {e}")
-                return None, {}
+                return None, {'error': str(e), 'trace': error_trace}
 
     def _fetch_marine_data_openmeteo(self, lat, lon, timezone_str):
-            params = {"latitude": lat, "longitude": lon, "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_direction,wind_wave_period,swell_wave_height,swell_wave_direction,swell_wave_period",
-                      "timezone": timezone_str, "forecast_days": 14}
-            try:
-                response = self.session.get(
-                    OPENMETEO_MARINE_API_URL, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json().get('hourly', {})
-                processed_data = []
-                local_tz = pytz.timezone(timezone_str)
-                for i in range(len(data.get('time', []))):
-                    dt_obj = local_tz.localize(datetime.fromisoformat(data['time'][i]))
-                    processed_data.append({
-                        'datetime_obj': dt_obj,
-                        'datetime': dt_obj.strftime('%Y-%m-%d %H:%M'),
-                        'wave_height': data['wave_height'][i],
-                        'wave_direction': self._deg_to_compass(data['wave_direction'][i]),
-                        'wave_period': data['wave_period'][i],
-                        'sea_level': data.get('sea_level', [None]*len(data.get('time', [])))[i],
-                        'wind_wave_height': data['wind_wave_height'][i],
-                        'wind_wave_direction': self._deg_to_compass(data['wind_wave_direction'][i]),
-                        'wind_wave_period': data['wind_wave_period'][i],
-                        'swell_wave_height': data['swell_wave_height'][i],
-                        'swell_wave_direction': self._deg_to_compass(data['swell_wave_direction'][i]),
-                        'swell_wave_period': data['swell_wave_period'][i],
-                    })
-                return processed_data
-            except Exception as e:
-                print(f"Error in _fetch_marine_data_openmeteo: {e}")
-                return None
+        params = {"latitude": lat, "longitude": lon, "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_direction,wind_wave_period,swell_wave_height,swell_wave_direction,swell_wave_period",
+                  "timezone": timezone_str, "forecast_days": 14}
+        headers = {'User-Agent': 'WeatherReporter/1.0 (https://github.com/USER/Weather-Reporter)'}
+        try:
+            response = self.session.get(
+                OPENMETEO_MARINE_API_URL, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json().get('hourly', {})
+            processed_data = []
+            local_tz = pytz.timezone(timezone_str)
+            for i in range(len(data.get('time', []))):
+                dt_obj = local_tz.localize(datetime.fromisoformat(data['time'][i]))
+                processed_data.append({
+                    'datetime_obj': dt_obj,
+                    'datetime': dt_obj.strftime('%Y-%m-%d %H:%M'),
+                    'wave_height': data.get('wave_height', [None]*len(data.get('time', [])))[i],
+                    'wave_direction': self._deg_to_compass(data.get('wave_direction', [None]*len(data.get('time', [])))[i]),
+                    'wave_period': data.get('wave_period', [None]*len(data.get('time', [])))[i],
+                    'sea_level': data.get('sea_level', [None]*len(data.get('time', [])))[i],
+                    'wind_wave_height': data.get('wind_wave_height', [None]*len(data.get('time', [])))[i],
+                    'wind_wave_direction': self._deg_to_compass(data.get('wind_wave_direction', [None]*len(data.get('time', [])))[i]),
+                    'wind_wave_period': data.get('wind_wave_period', [None]*len(data.get('time', [])))[i],
+                    'swell_wave_height': data.get('swell_wave_height', [None]*len(data.get('time', [])))[i],
+                    'swell_wave_direction': self._deg_to_compass(data.get('swell_wave_direction', [None]*len(data.get('time', [])))[i]),
+                    'swell_wave_period': data.get('swell_wave_period', [None]*len(data.get('time', [])))[i],
+                })
+            return processed_data
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"Error in _fetch_marine_data_openmeteo: {e}\n{error_trace}")
+            return None
 
     def _process_forecast_data_owm(self, data, local_tz):
             processed = []
@@ -366,32 +373,33 @@ class WeatherLogic:
             return processed
 
     def _process_forecast_data_openmeteo(self, hourly_data, local_tz):
-            processed = []
-            now_local = datetime.now(local_tz)
-            times = hourly_data.get('time', [])
-            for i in range(len(times)):
-                local_time = local_tz.localize(datetime.fromisoformat(times[i]))
-                if now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1):
-                    # Use apparent_temperature if available, else fallback to temperature_2m
+        processed = []
+        now_local = datetime.now(local_tz)
+        times = hourly_data.get('time', [])
+        num_times = len(times)
+        for i in range(num_times):
+            local_time = local_tz.localize(datetime.fromisoformat(times[i]))
+            if now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1):
+                # Use apparent_temperature if available, else fallback to temperature_2m
+                apparent_temp = hourly_data.get(
+                    'apparent_temperature', [None]*num_times)[i]
+                if apparent_temp is None:
                     apparent_temp = hourly_data.get(
-                        'apparent_temperature', [None]*len(times))[i]
-                    if apparent_temp is None:
-                        apparent_temp = hourly_data.get(
-                            'temperature_2m', [None]*len(times))[i]
-                    rain = (hourly_data.get('rain', [])[i] or 0) + (hourly_data.get('showers',
-                                                                                    [])[i] or 0) + (hourly_data.get('snowfall', [])[i] or 0)
-                    processed.append({
-                        'datetime_obj': local_time, 'datetime': local_time.strftime('%Y-%m-%d %H:%M'),
-                        'description': WMO_WEATHER_CODES_EN.get(hourly_data.get('weather_code', [])[i], 'N/A'),
-                        'temperature': apparent_temp,  # Apparent temperature
-                        'humidity': hourly_data.get('relative_humidity_2m', [])[i],
-                        'pressure': hourly_data.get('pressure_msl', [])[i],
-                        'wind_speed': hourly_data.get('wind_speed_10m', [])[i], 'wind_gust': hourly_data.get('wind_gusts_10m', [])[i],
-                        'wind_direction': self._deg_to_compass(hourly_data.get('wind_direction_10m', [])[i]),
-                        'rain': rain, 'uv_index': hourly_data.get('uv_index', [])[i],
-                        'pop': 100 if rain > 0 else 0, 'cloud_cover': hourly_data.get('cloud_cover', [])[i]
-                    })
-            return processed
+                        'temperature_2m', [None]*num_times)[i]
+                rain = (hourly_data.get('rain', [0]*num_times)[i] or 0) + (hourly_data.get('showers',
+                                                                                [0]*num_times)[i] or 0) + (hourly_data.get('snowfall', [0]*num_times)[i] or 0)
+                processed.append({
+                    'datetime_obj': local_time, 'datetime': local_time.strftime('%Y-%m-%d %H:%M'),
+                    'description': WMO_WEATHER_CODES_EN.get(hourly_data.get('weather_code', [None]*num_times)[i], 'N/A'),
+                    'temperature': apparent_temp,  # Apparent temperature
+                    'humidity': hourly_data.get('relative_humidity_2m', [None]*num_times)[i],
+                    'pressure': hourly_data.get('pressure_msl', [None]*num_times)[i],
+                    'wind_speed': hourly_data.get('wind_speed_10m', [None]*num_times)[i], 'wind_gust': hourly_data.get('wind_gusts_10m', [None]*num_times)[i],
+                    'wind_direction': self._deg_to_compass(hourly_data.get('wind_direction_10m', [None]*num_times)[i]),
+                    'rain': rain, 'uv_index': hourly_data.get('uv_index', [None]*num_times)[i],
+                    'pop': 100 if rain > 0 else 0, 'cloud_cover': hourly_data.get('cloud_cover', [None]*num_times)[i]
+                })
+        return processed
 
     def _degrees_to_direction(self, degrees):
         """Convert degrees to compass direction (standardized)."""
