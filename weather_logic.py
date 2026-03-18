@@ -246,26 +246,25 @@ class WeatherLogic:
                 # MET Norway units: temp (C), wind (m/s), humidity (%), cloud (%), rain (mm)
                 # Convert wind m/s to knots: 1 m/s = 1.94384 knots
                 wind_speed_ms = instant.get('wind_speed', 0)
-                wind_gust_ms = instant.get('wind_speed_of_gust', wind_speed_ms)
+                # MET Norway compact does not reliably provide separate gust data
+                wind_gust_ms = None
                 
-                # UV index (clear sky) — available in short range only
-                uv_val = instant.get('ultraviolet_index_clear_sky')
+                # UV index and PoP not reliably available in compact endpoint
+                uv_val = None
                 
                 # Dew point temperature — available in instant data
                 dew_point_val = instant.get('dew_point_temperature')
                 
-                # Next 1h precipitation and PoP
+                # Next 1h precipitation
                 rain_1h = 0.0
-                pop_val = None
+                pop_val = None  # PoP not reliably available in compact endpoint
                 summary_1h = "Clear sky"
                 if 'next_1_hours' in item['data']:
                     rain_1h = item['data']['next_1_hours']['details'].get('precipitation_amount', 0.0)
-                    pop_val = item['data']['next_1_hours']['details'].get('probability_of_precipitation')
                     summary_1h = item['data']['next_1_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
                 elif 'next_6_hours' in item['data']:
                     # Fallback if 1h is missing
                     rain_1h = item['data']['next_6_hours']['details'].get('precipitation_amount', 0.0) / 6.0
-                    pop_val = item['data']['next_6_hours']['details'].get('probability_of_precipitation')
                     summary_1h = item['data']['next_6_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
 
                 processed.append({
@@ -274,12 +273,12 @@ class WeatherLogic:
                     'temperature': instant.get('air_temperature'),
                     'humidity': instant.get('relative_humidity'),
                     'wind_speed': wind_speed_ms * 1.94384,
-                    'wind_gust': wind_gust_ms * 1.94384,
+                    'wind_gust': None,
                     'wind_direction': self._deg_to_compass(instant.get('wind_from_direction', 0)),
                     'rain': rain_1h,
-                    'pop': pop_val if pop_val is not None else (100.0 if rain_1h > 0 else 0.0),
+                    'pop': None,
                     'cloud_cover': instant.get('cloud_area_fraction'),
-                    'uv_index': uv_val,
+                    'uv_index': None,
                     'dew_point': dew_point_val,
                     'description': summary_1h
                 })

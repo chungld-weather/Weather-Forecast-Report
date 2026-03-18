@@ -584,18 +584,32 @@ if st.session_state.weather_data:
         ['temperature', 'humidity'], ['#FF00FF', 'cyan'],
         units=['°C', '%'], use_secondary_y=True)
     
-    st.subheader("Wind Speed & Gust")
-    plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
-        ['wind_speed', 'wind_gust'], ['cyan', '#FF00FF'],
-        units=['knots', 'knots'])
+    # Wind: show combined chart only if gust has valid data, else just Wind Speed
+    if 'wind_gust' in df.columns and df['wind_gust'].dropna().any():
+        st.subheader("Wind Speed & Gust")
+        plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
+            ['wind_speed', 'wind_gust'], ['cyan', '#FF00FF'],
+            units=['knots', 'knots'])
+    else:
+        st.subheader("Wind Speed")
+        plot_custom_chart(df.set_index('datetime'), "Wind Speed",
+            ['wind_speed'], ['cyan'],
+            units=['knots'])
     
-    st.subheader("Rain & PoP")
-    rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
-    rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
-    plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
-        rain_cols, ['cyan', '#FF00FF'] if 'rain' in df.columns else ['cyan'],
-        units=rain_units, use_secondary_y=True)
-    st.caption("Note: PoP = Probability of Precipitation")
+    # Rain & PoP: show combined only if pop has valid data
+    if 'pop' in df.columns and df['pop'].dropna().any():
+        st.subheader("Rain & PoP")
+        rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
+        rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
+        plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
+            rain_cols, ['cyan', '#FF00FF'] if 'rain' in df.columns else ['cyan'],
+            units=rain_units, use_secondary_y=True)
+        st.caption("Note: PoP = Probability of Precipitation")
+    elif 'rain' in df.columns:
+        st.subheader("Rain")
+        plot_custom_chart(df.set_index('datetime'), "Rain",
+            ['rain'], ['cyan'],
+            units=['mm/h'])
     
     if 'cloud_cover' in df.columns:
         st.subheader("Cloud Cover & Weather Description")
@@ -603,12 +617,12 @@ if st.session_state.weather_data:
             ['cloud_cover'], ['cyan'], units=['%'], 
             descriptions=df['description'].tolist())
         
-    if 'dew_point' in df.columns:
+    if 'dew_point' in df.columns and df['dew_point'].dropna().any():
         st.subheader("Dew Point Temperature")
         plot_custom_chart(df.set_index('datetime'), "Dew Point Temperature",
             ['dew_point'], ['cyan'], units=['°C'])
         
-    if 'uv_index' in df.columns:
+    if 'uv_index' in df.columns and df['uv_index'].dropna().any():
         st.subheader("UV Index")
         plot_custom_chart(df.set_index('datetime'), "UV Index",
             ['uv_index'], ['#FF00FF'], units=[''])
@@ -632,6 +646,7 @@ if st.session_state.weather_data:
     else:
         cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'pop', 'dew_point', 'uv_index']
     df_display = df[[c for c in cols if c in df.columns]].copy()
+    df_display.fillna('N/A', inplace=True)
     
     # Add units to headers
     col_map = {
@@ -644,9 +659,9 @@ if st.session_state.weather_data:
         'wind_direction': 'Wind Dir',
         'rain': 'Rain (mm)',
         'pop': 'PoP (%)',
-        'dew_point': 'Dew Pt (°C)',
+        'dew_point': 'Dewpoint (°C)',
         'uv_index': 'UV'
-    }
+    } 
     df_display.rename(columns=col_map, inplace=True)
     
     # Render table via HTML for complete styling control (font size + lightblue hover)
