@@ -7,6 +7,7 @@ import datetime
 import math
 from dotenv import load_dotenv
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import base64
 import requests
 import folium
@@ -478,6 +479,8 @@ if st.session_state.weather_data:
                 showlegend=True
             )
             
+            is_secondary = (use_secondary_y and len(cols) == 2 and t['col'] == cols[1])
+
             # Subtle fill below curve
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
@@ -485,21 +488,21 @@ if st.session_state.weather_data:
                 fill='tozeroy',
                 fillcolor=fill_color,
                 hoverinfo='skip', showlegend=False
-            ))
+            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
             
             # Add outer glow
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
                 line=dict(color=glow_color_2, width=8, shape='spline'),
                 hoverinfo='skip', showlegend=False
-            ))
+            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
             
             # Add inner glow
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
                 line=dict(color=glow_color_1, width=4, shape='spline'),
                 hoverinfo='skip', showlegend=False
-            ))
+            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
             
             if descriptions is not None:
                 scatter_kwargs['customdata'] = descriptions
@@ -507,45 +510,64 @@ if st.session_state.weather_data:
             else:
                 scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]}<extra></extra>'
                 
-            fig.add_trace(go.Scatter(**scatter_kwargs))
+            fig.add_trace(go.Scatter(**scatter_kwargs), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
                     
         y_max_range = max_val * 1.1 if max_val != -float('inf') else None
         
         tickvals = df_plot.index[df_plot.index.hour.isin([7, 19])]
         ticktext = tickvals.strftime('%m-%d %H:%M')
         
-        fig.update_layout(
-            title=dict(text=title, font=dict(size=18)),
+        layout_kwargs = dict(
+            title=dict(text=title, font=dict(size=18, color='#E0E0E0')),
             xaxis=dict(
                 tickmode='array',
                 tickvals=tickvals,
                 ticktext=ticktext,
                 tickangle=-45,
                 showgrid=True,
-                gridcolor='rgba(128, 128, 128, 0.2)',
-                tickfont=dict(size=13),
-                title_font=dict(size=14)
+                gridcolor='rgba(255, 255, 255, 0.05)',
+                tickfont=dict(size=13, color='#A0A0B0'),
+                title_font=dict(size=14, color='#E0E0E0')
             ),
-            yaxis=dict(
-                range=[None, y_max_range] if y_max_range is not None else None,
-                showgrid=True,
-                gridcolor='rgba(128, 128, 128, 0.2)',
-                tickfont=dict(size=13),
-                title_font=dict(size=14)
-            ),
-            legend=dict(font=dict(size=13)),
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
+            legend=dict(font=dict(size=13, color='#E0E0E0')),
+            plot_bgcolor='#0b0410',  # Background gradient dark purple-black vibe
+            paper_bgcolor='#0b0410',
             hovermode="x unified",
             margin=dict(l=40, r=20, t=40, b=40)
         )
+
+        if use_secondary_y and len(cols) == 2:
+            layout_kwargs['yaxis'] = dict(
+                title=f"{cols[0]} ({units[0]})",
+                showgrid=True,
+                gridcolor='rgba(255, 255, 255, 0.05)',
+                tickfont=dict(size=13, color='#A0A0B0'),
+                title_font=dict(size=14, color='#E0E0E0')
+            )
+            layout_kwargs['yaxis2'] = dict(
+                title=f"{cols[1]} ({units[1]})",
+                showgrid=False,
+                tickfont=dict(size=13, color='#A0A0B0'),
+                title_font=dict(size=14, color='#E0E0E0')
+            )
+        else:
+            layout_kwargs['yaxis'] = dict(
+                range=[None, y_max_range] if y_max_range is not None else None,
+                showgrid=True,
+                gridcolor='rgba(255, 255, 255, 0.05)',
+                tickfont=dict(size=13, color='#A0A0B0'),
+                title_font=dict(size=14, color='#E0E0E0')
+            )
+
+        fig.update_layout(**layout_kwargs)
         
         st.plotly_chart(fig, width="stretch")
 
     st.subheader("Temperature & Humidity")
+    # Swapped colors so Temperature is hotpink (#FF00FF) and Humidity is cyan
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
-        ['temperature', 'humidity'], ['cyan', '#FF00FF'],
-        units=['°C', '%'])
+        ['temperature', 'humidity'], ['#FF00FF', 'cyan'],
+        units=['°C', '%'], use_secondary_y=True)
     
     st.subheader("Wind Speed & Gust")
     plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
@@ -557,7 +579,8 @@ if st.session_state.weather_data:
     rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
     plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
         rain_cols, ['cyan', '#FF00FF'] if 'rain' in df.columns else ['cyan'],
-        units=rain_units)
+        units=rain_units, use_secondary_y=True)
+    st.caption("Note: PoP = Probability of Precipitation")
     
     if 'cloud_cover' in df.columns:
         st.subheader("Cloud Cover & Weather Description")
