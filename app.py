@@ -382,12 +382,13 @@ if st.session_state.weather_data:
     logo_b64 = get_base64_image("Pictures/Logo.png")
     if logo_b64:
         windy_html = f"""
-        <div style="position: relative; width: 100%; height: 500px;">
+        <div style="position: relative; width: 100%; height: 500px; overflow: hidden; border-radius: 8px;">
             <iframe src="{windy_url}" width="100%" height="100%" frameborder="0" style="border:0; pointer-events: auto;"></iframe>
-            <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 999; 
-                        background-color: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 9999; 
+                        background-color: rgba(255, 255, 255, 0.9); padding: 5px 20px; border-bottom-left-radius: 15px; 
+                        border-bottom-right-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
                         display: flex; justify-content: center; align-items: center; pointer-events: none;">
-                <img src="data:image/png;base64,{logo_b64}" style="max-height: 80px; max-width: 400px; object-fit: contain;">
+                <img src="data:image/png;base64,{logo_b64}" style="max-height: 100px; max-width: 450px; object-fit: contain;">
             </div>
         </div>
         """
