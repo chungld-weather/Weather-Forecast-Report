@@ -352,26 +352,26 @@ if st.session_state.weather_data:
     # 1. Temperature
     temp_b64 = get_base64_image("icons/temp.png")
     colC1.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
-    curr_temp = current_point.get('temperature', 0)
-    colC1.metric("Temperature", f"{curr_temp:.1f}°C")
+    curr_temp = current_point.get('temperature')
+    colC1.metric("Temperature", f"{curr_temp:.1f}°C" if curr_temp is not None else "N/A")
     
     # 2. Wind Speed
     wind_b64 = get_base64_image("icons/wind.png")
     colC2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
-    curr_wind = current_point.get('wind_speed', 0)
-    colC2.metric("Wind Speed", f"{curr_wind:.1f} knots")
+    curr_wind = current_point.get('wind_speed')
+    colC2.metric("Wind Speed", f"{curr_wind:.1f} knots" if curr_wind is not None else "N/A")
     
     # 3. Rain
     rain_b64 = get_base64_image("icons/rain.png")
     colC3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
-    curr_rain = current_point.get('rain', 0)
-    colC3.metric("Rain", f"{curr_rain:.1f} mm")
+    curr_rain = current_point.get('rain')
+    colC3.metric("Rain", f"{curr_rain:.1f} mm" if curr_rain is not None else "N/A")
     
     # 4. UV Index
     uv_b64 = get_base64_image("icons/UV.png")
     colC4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
-    curr_uv = current_point.get('uv_index', 0)
-    colC4.metric("UV Index", f"{curr_uv:.1f}")
+    curr_uv = current_point.get('uv_index')
+    colC4.metric("UV Index", f"{curr_uv:.1f}" if curr_uv is not None else "N/A")
     
     st.markdown("---")
     
