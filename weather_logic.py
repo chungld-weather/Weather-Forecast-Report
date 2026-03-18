@@ -1081,7 +1081,7 @@ class WeatherLogic:
                 if api_source == "Open-Meteo":
                     forecast_header = "Weather Forecast (Next 14 Days - Hourly)"
                 elif api_source == "MET Norway":
-                    forecast_header = "Weather Forecast (Next 10 Days - Hourly)"
+                    forecast_header = "Weather Forecast (Next 10 Days)"
                 else:  # OpenWeatherMap
                     forecast_header = "Weather Forecast (Next 5 Days 03-Hourly)"
                 elements.append(

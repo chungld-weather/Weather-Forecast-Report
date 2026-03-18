@@ -716,10 +716,10 @@ if st.session_state.weather_data:
     colA, colB = st.columns(2)
     
     with colA:
-        st.subheader("Professional PDF Report")
+        st.subheader("PDF Report")
         pdf_lang = st.radio("PDF Language", ["English", "Vietnamese"], horizontal=True)
-        if st.button("Generate Professional PDF"):
-            with st.spinner("Generating Professional PDF..."):
+        if st.button("Generate PDF Report"):
+            with st.spinner("Generating PDF Report..."):
                 if pdf_lang == "Vietnamese":
                     filename = logic.generate_vietnamese_pdf_report(
                         st.session_state.lat, st.session_state.lon, w_data, l_info, 
@@ -747,9 +747,9 @@ if st.session_state.weather_data:
         default_from = current_date - datetime.timedelta(days=7)
         
         with export_col1:
-            hist_from = st.date_input("Hist From", max_value=current_date, value=default_from)
+            hist_from = st.date_input("History From", max_value=current_date, value=default_from)
         with export_col2:
-            hist_to = st.date_input("Hist To", max_value=current_date, value=current_date)
+            hist_to = st.date_input("History To", max_value=current_date, value=current_date)
             
         col_ex1, col_ex2 = st.columns(2)
         with col_ex1:
