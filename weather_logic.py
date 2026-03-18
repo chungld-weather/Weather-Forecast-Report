@@ -248,15 +248,24 @@ class WeatherLogic:
                 wind_speed_ms = instant.get('wind_speed', 0)
                 wind_gust_ms = instant.get('wind_speed_of_gust', wind_speed_ms)
                 
-                # Next 1h precipitation
+                # UV index (clear sky) — available in short range only
+                uv_val = instant.get('ultraviolet_index_clear_sky')
+                
+                # Dew point temperature — available in instant data
+                dew_point_val = instant.get('dew_point_temperature')
+                
+                # Next 1h precipitation and PoP
                 rain_1h = 0.0
+                pop_val = None
                 summary_1h = "Clear sky"
                 if 'next_1_hours' in item['data']:
                     rain_1h = item['data']['next_1_hours']['details'].get('precipitation_amount', 0.0)
+                    pop_val = item['data']['next_1_hours']['details'].get('probability_of_precipitation')
                     summary_1h = item['data']['next_1_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
                 elif 'next_6_hours' in item['data']:
                     # Fallback if 1h is missing
                     rain_1h = item['data']['next_6_hours']['details'].get('precipitation_amount', 0.0) / 6.0
+                    pop_val = item['data']['next_6_hours']['details'].get('probability_of_precipitation')
                     summary_1h = item['data']['next_6_hours']['summary']['symbol_code'].replace('_', ' ').capitalize()
 
                 processed.append({
@@ -268,9 +277,10 @@ class WeatherLogic:
                     'wind_gust': wind_gust_ms * 1.94384,
                     'wind_direction': self._deg_to_compass(instant.get('wind_from_direction', 0)),
                     'rain': rain_1h,
-                    'pop': 0.0, # Not directly provided as % in compact
+                    'pop': pop_val if pop_val is not None else (100.0 if rain_1h > 0 else 0.0),
                     'cloud_cover': instant.get('cloud_area_fraction'),
-                    'uv_index': 0.0, # Not in compact
+                    'uv_index': uv_val,
+                    'dew_point': dew_point_val,
                     'description': summary_1h
                 })
             return processed
@@ -280,7 +290,7 @@ class WeatherLogic:
             params = {
                 "latitude": lat,
                 "longitude": lon,
-                "hourly": "apparent_temperature,temperature_2m,relative_humidity_2m,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index",
+                "hourly": "apparent_temperature,temperature_2m,relative_humidity_2m,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index,dewpoint_2m",
                 "daily": "apparent_temperature_max,apparent_temperature_min,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,weather_code",
                 "timezone": "auto",
                 "forecast_days": 14,
@@ -358,6 +368,15 @@ class WeatherLogic:
                     main_data = item.get('main', {})
                     apparent_temp = main_data.get(
                         'feels_like', main_data.get('temp'))
+                    # Compute dew point from temperature and humidity using Magnus formula
+                    temp_c = main_data.get('temp')
+                    hum = main_data.get('humidity')
+                    dew_point_val = None
+                    if temp_c is not None and hum is not None and hum > 0:
+                        import math as _math
+                        a, b = 17.27, 237.7
+                        alpha = (a * temp_c / (b + temp_c)) + _math.log(hum / 100.0)
+                        dew_point_val = round((b * alpha) / (a - alpha), 1)
                     processed.append({
                         'datetime_obj': local_time, 'datetime': local_time.strftime('%Y-%m-%d %H:%M'),
                         'description': item.get('weather', [{}])[0].get('description', 'N/A').capitalize(),
@@ -368,7 +387,8 @@ class WeatherLogic:
                         'wind_gust': round(item.get('wind', {}).get('gust', 0) * 1.94384, 1),
                         'wind_direction': self._deg_to_compass(item.get('wind', {}).get('deg')),
                         'rain': item.get('rain', {}).get('3h', 0.0), 'visibility': item.get('visibility'),
-                        'pop': round(item.get('pop', 0.0) * 100), 'cloud_cover': item.get('clouds', {}).get('all')
+                        'pop': round(item.get('pop', 0.0) * 100), 'cloud_cover': item.get('clouds', {}).get('all'),
+                        'dew_point': dew_point_val
                     })
             return processed
 
@@ -397,7 +417,8 @@ class WeatherLogic:
                     'wind_speed': hourly_data.get('wind_speed_10m', [None]*num_times)[i], 'wind_gust': hourly_data.get('wind_gusts_10m', [None]*num_times)[i],
                     'wind_direction': self._deg_to_compass(hourly_data.get('wind_direction_10m', [None]*num_times)[i]),
                     'rain': rain, 'uv_index': hourly_data.get('uv_index', [None]*num_times)[i],
-                    'pop': 100 if rain > 0 else 0, 'cloud_cover': hourly_data.get('cloud_cover', [None]*num_times)[i]
+                    'pop': 100 if rain > 0 else 0, 'cloud_cover': hourly_data.get('cloud_cover', [None]*num_times)[i],
+                    'dew_point': hourly_data.get('dewpoint_2m', [None]*num_times)[i]
                 })
         return processed
 

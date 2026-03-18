@@ -603,6 +603,11 @@ if st.session_state.weather_data:
             ['cloud_cover'], ['cyan'], units=['%'], 
             descriptions=df['description'].tolist())
         
+    if 'dew_point' in df.columns:
+        st.subheader("Dew Point Temperature")
+        plot_custom_chart(df.set_index('datetime'), "Dew Point Temperature",
+            ['dew_point'], ['cyan'], units=['°C'])
+        
     if 'uv_index' in df.columns:
         st.subheader("UV Index")
         plot_custom_chart(df.set_index('datetime'), "UV Index",
@@ -623,9 +628,9 @@ if st.session_state.weather_data:
     st.markdown("---")
     st.header("Data Table")
     if st.session_state.api_source == "Open-Meteo":
-        cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain', 'pop', 'uv_index']
+        cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain', 'pop', 'dew_point', 'uv_index']
     else:
-        cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'pop']
+        cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'pop', 'dew_point', 'uv_index']
     df_display = df[[c for c in cols if c in df.columns]].copy()
     
     # Add units to headers
@@ -639,6 +644,7 @@ if st.session_state.weather_data:
         'wind_direction': 'Wind Dir',
         'rain': 'Rain (mm)',
         'pop': 'PoP (%)',
+        'dew_point': 'Dew Pt (°C)',
         'uv_index': 'UV'
     }
     df_display.rename(columns=col_map, inplace=True)
