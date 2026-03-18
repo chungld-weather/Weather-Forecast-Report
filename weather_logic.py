@@ -300,10 +300,10 @@ class WeatherLogic:
                 daily_data = data.get('daily', {})
                 if daily_data.get('sunrise') and daily_data['sunrise']:
                     location_info['sunrise'] = datetime.fromisoformat(
-                        daily_data['sunrise'][0]).astimezone(local_tz).strftime('%H:%M')
+                        daily_data['sunrise'][0]).strftime('%H:%M')
                 if daily_data.get('sunset') and daily_data['sunset']:
                     location_info['sunset'] = datetime.fromisoformat(
-                        daily_data['sunset'][0]).astimezone(local_tz).strftime('%H:%M')
+                        daily_data['sunset'][0]).strftime('%H:%M')
                 processed_data = self._process_forecast_data_openmeteo(
                     data.get('hourly', {}), local_tz)
                 return processed_data, location_info

@@ -32,7 +32,7 @@ st.set_page_config(page_title="Weather Reporter", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(135deg, #000000, #2A0845);
+    background: linear-gradient(135deg, #000000, #FCF8F8);
     color: white; /* to ensure text remains readable on dark background */
 }
 
@@ -551,8 +551,8 @@ if st.session_state.weather_data:
                 tickfont=dict(size=13, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             )
-            # Center the line for temperature to make it clearer
-            if cols[0] == 'temperature':
+            # Center the line for temperature or rain to make it clearer
+            if cols[0] in ['temperature', 'rain']:
                 t_min = df_plot[cols[0]].min()
                 t_max = df_plot[cols[0]].max()
                 t_span = t_max - t_min if t_max > t_min else 5
