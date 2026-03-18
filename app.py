@@ -452,7 +452,6 @@ if st.session_state.weather_data:
         # Sort descending by mean value so hover label order matches visual order
         traces.sort(key=lambda t: t['mean_y'], reverse=True)
         
-        fig = go.Figure()
         for t in traces:
             hex_color = t['color']
             
