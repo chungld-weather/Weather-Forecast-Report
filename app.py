@@ -32,7 +32,7 @@ st.set_page_config(page_title="Weather Reporter", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(135deg, #2A0845, #1C0770);
+    background: linear-gradient(135deg, #000000, #2A0845);
     color: white; /* to ensure text remains readable on dark background */
 }
 
@@ -537,20 +537,28 @@ if st.session_state.weather_data:
                 title_font=dict(size=14, color='#E0E0E0')
             ),
             legend=dict(font=dict(size=13, color='#E0E0E0')),
-            plot_bgcolor='#0b0410',  # Background gradient dark purple-black vibe
-            paper_bgcolor='#0b0410',
+            plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+            paper_bgcolor='rgba(0,0,0,0)', # Transparent background
             hovermode="x unified",
             margin=dict(l=40, r=20, t=40, b=40)
         )
 
         if use_secondary_y and len(cols) == 2:
-            layout_kwargs['yaxis'] = dict(
+            y1_dict = dict(
                 title=f"{cols[0]} ({units[0]})",
                 showgrid=True,
                 gridcolor='rgba(255, 255, 255, 0.05)',
                 tickfont=dict(size=13, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             )
+            # Center the line for temperature to make it clearer
+            if cols[0] == 'temperature':
+                t_min = df_plot[cols[0]].min()
+                t_max = df_plot[cols[0]].max()
+                t_span = t_max - t_min if t_max > t_min else 5
+                y1_dict['range'] = [t_min - t_span, t_max + t_span]
+            
+            layout_kwargs['yaxis'] = y1_dict
             layout_kwargs['yaxis2'] = dict(
                 title=f"{cols[1]} ({units[1]})",
                 showgrid=False,
