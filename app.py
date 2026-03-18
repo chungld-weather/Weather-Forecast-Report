@@ -32,7 +32,7 @@ st.set_page_config(page_title="Weather Reporter", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(135deg, #000000, #FCF8F8);
+    background: linear-gradient(135deg, #000000, #000B58);
     color: white; /* to ensure text remains readable on dark background */
 }
 
