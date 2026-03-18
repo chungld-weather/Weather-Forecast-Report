@@ -485,6 +485,9 @@ if st.session_state.weather_data:
             )
             
             is_secondary = (use_secondary_y and len(cols) == 2 and t['col'] == cols[1])
+            trace_kwargs = {}
+            if use_secondary_y and len(cols) == 2:
+                trace_kwargs['secondary_y'] = is_secondary
 
             # Subtle fill below curve
             fig.add_trace(go.Scatter(
@@ -493,21 +496,21 @@ if st.session_state.weather_data:
                 fill='tozeroy',
                 fillcolor=fill_color,
                 hoverinfo='skip', showlegend=False
-            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
+            ), **trace_kwargs)
             
             # Add outer glow
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
                 line=dict(color=glow_color_2, width=8, shape='spline'),
                 hoverinfo='skip', showlegend=False
-            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
+            ), **trace_kwargs)
             
             # Add inner glow
             fig.add_trace(go.Scatter(
                 x=df_plot.index, y=t['data'], mode='lines',
                 line=dict(color=glow_color_1, width=4, shape='spline'),
                 hoverinfo='skip', showlegend=False
-            ), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
+            ), **trace_kwargs)
             
             if descriptions is not None:
                 scatter_kwargs['customdata'] = descriptions
@@ -515,7 +518,7 @@ if st.session_state.weather_data:
             else:
                 scatter_kwargs['hovertemplate'] = f'%{{y:.1f}}{t["unit_str"]}<extra></extra>'
                 
-            fig.add_trace(go.Scatter(**scatter_kwargs), secondary_y=is_secondary if (use_secondary_y and len(cols) == 2) else None)
+            fig.add_trace(go.Scatter(**scatter_kwargs), **trace_kwargs)
                     
         y_max_range = max_val * 1.1 if max_val != -float('inf') else None
         
