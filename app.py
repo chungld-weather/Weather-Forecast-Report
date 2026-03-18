@@ -420,13 +420,18 @@ if st.session_state.weather_data:
     st.header("Charts")
     df = pd.DataFrame(w_data)
 
-    def plot_custom_chart(df_plot, title, cols, colors, units=None, descriptions=None):
+    def plot_custom_chart(df_plot, title, cols, colors, units=None, descriptions=None, use_secondary_y=False):
         # Ensure datetime is parsed
         if not pd.api.types.is_datetime64_any_dtype(df_plot.index):
             df_plot.index = pd.to_datetime(df_plot.index)
         
         if units is None:
             units = [''] * len(cols)
+            
+        if use_secondary_y and len(cols) == 2:
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+        else:
+            fig = go.Figure()
         
         # Build traces list, then sort by descending mean y so the highest
         # line on the chart always appears first in the unified hover tooltip
