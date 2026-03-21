@@ -1250,7 +1250,7 @@ class WeatherLogic:
                 elements.append(Spacer(1, 0.1*inch))
 
             # --- NEW: Marine Forecast Section (for Open-Meteo only, specific locations) ---
-            if api_source == "OpenMeteo" and marine_data:
+            if api_source == "Open-Meteo" and marine_data:
                 elements.append(
                     Paragraph("Marine Forecast (Next 14 Days Hourly)", h2_style))
 
@@ -1407,10 +1407,10 @@ class WeatherLogic:
 
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph("--- End of Report ---", footer_style))
-            if api_source == "OWM":
+            if api_source == "OpenWeatherMap":
                 elements.append(
                     Paragraph("Weather data © OpenWeatherMap", footer_style))
-            elif api_source == "OpenMeteo":
+            elif api_source == "Open-Meteo":
                 elements.append(
                     Paragraph("Weather data, Marine data © Open-Meteo.com", footer_style))  # Updated footer
             elements.append(
@@ -1734,7 +1734,7 @@ class WeatherLogic:
                 elements.append(Spacer(1, 0.1*inch))
 
             # --- NEW: Marine Forecast Section (for Open-Meteo only, specific locations) ---
-            if api_source == "OpenMeteo" and marine_data:
+            if api_source == "Open-Meteo" and marine_data:
                 elements.append(
                     Paragraph("Dự Báo Biển (14 Ngày Tới Theo Giờ)", h2_style))
 
@@ -1886,10 +1886,10 @@ class WeatherLogic:
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph("--- Kết thúc báo cáo ---",
                             footer_style))
-            if api_source == "OWM":
+            if api_source == "OpenWeatherMap":
                 elements.append(
                     Paragraph("Dữ liệu thời tiết © OpenWeatherMap", footer_style))
-            elif api_source == "OpenMeteo":
+            elif api_source == "Open-Meteo":
                 elements.append(
                     Paragraph("Dữ liệu thời tiết, Dữ liệu biển © Open-Meteo.com", footer_style))  # Updated footer
             elements.append(Paragraph(
