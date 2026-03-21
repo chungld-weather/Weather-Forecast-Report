@@ -292,6 +292,7 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
             st.session_state.weather_data = w_data
             st.session_state.location_info = l_info
             st.session_state.marine_data = m_data
+            print(f"DEBUG MARINE: m_data type={type(m_data).__name__}, len={len(m_data) if m_data else 0}, api_source='{data_source}'")
             st.session_state.lat = lat
             st.session_state.lon = lon
             st.session_state.api_source = data_source
