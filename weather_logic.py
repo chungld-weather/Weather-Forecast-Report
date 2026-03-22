@@ -1279,6 +1279,33 @@ class WeatherLogic:
                         Paragraph("No data available to generate weather charts.", normal_style))
                 elements.append(Spacer(1, 0.1*inch))
 
+            # --- NEW: Process Marine Forecast to skip N/A rows ---
+            if marine_data:
+                marine_relevant_keys = ['wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period']
+                valid_marine_data = []
+                consecutive_na_count = 0
+                import math
+                for row in marine_data:
+                    is_all_na = True
+                    for k in marine_relevant_keys:
+                        val = row.get(k)
+                        if val is not None and not (isinstance(val, float) and math.isnan(val)) and val != 'N/A':
+                            is_all_na = False
+                            break
+                    if is_all_na:
+                        consecutive_na_count += 1
+                    else:
+                        consecutive_na_count = 0
+                    
+                    if consecutive_na_count >= 6:
+                        if len(valid_marine_data) >= 5:
+                            valid_marine_data = valid_marine_data[:-5]
+                        else:
+                            valid_marine_data = []
+                        break
+                    valid_marine_data.append(row)
+                marine_data = valid_marine_data
+
             # --- NEW: Marine Forecast Section ---
             if marine_data:
                 elements.append(
@@ -1778,6 +1805,33 @@ class WeatherLogic:
                     elements.append(
                         Paragraph("Không có dữ liệu để tạo biểu đồ.", normal_style))
                 elements.append(Spacer(1, 0.1*inch))
+
+            # --- NEW: Process Marine Forecast to skip N/A rows ---
+            if marine_data:
+                marine_relevant_keys = ['wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period']
+                valid_marine_data = []
+                consecutive_na_count = 0
+                import math
+                for row in marine_data:
+                    is_all_na = True
+                    for k in marine_relevant_keys:
+                        val = row.get(k)
+                        if val is not None and not (isinstance(val, float) and math.isnan(val)) and val != 'N/A':
+                            is_all_na = False
+                            break
+                    if is_all_na:
+                        consecutive_na_count += 1
+                    else:
+                        consecutive_na_count = 0
+                    
+                    if consecutive_na_count >= 6:
+                        if len(valid_marine_data) >= 5:
+                            valid_marine_data = valid_marine_data[:-5]
+                        else:
+                            valid_marine_data = []
+                        break
+                    valid_marine_data.append(row)
+                marine_data = valid_marine_data
 
             # --- NEW: Marine Forecast Section (for Open-Meteo only, specific locations) ---
             if marine_data:
