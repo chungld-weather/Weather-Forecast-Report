@@ -681,8 +681,29 @@ if st.session_state.weather_data:
     } 
     df_display.rename(columns=col_map, inplace=True)
     
+    def highlight_extremes(s):
+        styles = [''] * len(s)
+        try:
+            if s.name == 'Temp (°C)':
+                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 37 else '' for v in s]
+            elif s.name == 'Wind (knots)':
+                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 25 else '' for v in s]
+            elif s.name == 'Rain (mm)':
+                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 0.5 else '' for v in s]
+            elif s.name == 'UV':
+                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 10 else '' for v in s]
+        except Exception:
+            pass
+        return styles
+
+    styled_df = df_display.style.apply(highlight_extremes, axis=0)
+    if hasattr(styled_df, 'hide'):
+        styled_df = styled_df.hide(axis="index")
+    else:
+        styled_df = styled_df.hide_index()
+        
     # Render table via HTML for complete styling control (font size + lightblue hover)
-    html_table = df_display.to_html(classes="custom-table", index=False, justify='left', escape=False)
+    html_table = styled_df.to_html(table_attributes='class="custom-table"', justify='left', escape=False)
     
     html_template = f"""
 <style>

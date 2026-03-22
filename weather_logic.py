@@ -1217,6 +1217,17 @@ class WeatherLogic:
                             ('BACKGROUND', (col_idx, min_row_idx), (col_idx, min_row_idx), colors.cyan))
                         weather_style_cmds.append(
                             ('BACKGROUND', (col_idx, max_row_idx), (col_idx, max_row_idx), colors.pink))
+                        
+                        # Add yellow highlights for extremes
+                        for val, r_idx in data_points:
+                            if param == 'temperature' and val > 37:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'wind_speed' and val > 25:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'rain' and val > 0.5:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'uv_index' and val > 10:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
                 weather_table.setStyle(TableStyle(weather_style_cmds))
                 elements.append(weather_table)
                 elements.append(Spacer(1, 0.1*inch))
@@ -1383,6 +1394,11 @@ class WeatherLogic:
                                 ('BACKGROUND', (col_idx, min_row_idx), (col_idx, min_row_idx), colors.cyan))
                             marine_style_cmds.append(
                                 ('BACKGROUND', (col_idx, max_row_idx), (col_idx, max_row_idx), colors.pink))
+                                
+                            # Add yellow highlights for extremes
+                            for val, r_idx in data_points:
+                                if param == 'wave_height' and val > 2.5:
+                                    marine_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
                     marine_table.setStyle(TableStyle(marine_style_cmds))
                     elements.append(marine_table)
                     elements.append(Spacer(1, 0.1*inch))
@@ -1673,6 +1689,17 @@ class WeatherLogic:
                             ('BACKGROUND', (col_idx, min_row_idx), (col_idx, min_row_idx), colors.cyan))
                         weather_style_cmds.append(
                             ('BACKGROUND', (col_idx, max_row_idx), (col_idx, max_row_idx), colors.pink))
+                        
+                        # Add yellow highlights for extremes
+                        for val, r_idx in data_points:
+                            if param == 'temperature' and val > 37:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'wind_speed' and val > 25:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'rain' and val > 0.5:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
+                            elif param == 'uv_index' and val > 10:
+                                weather_style_cmds.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
                 weather_table.setStyle(TableStyle(weather_style_cmds))
                 elements.append(weather_table)
                 elements.append(Spacer(1, 0.1*inch))
@@ -1862,6 +1889,11 @@ class WeatherLogic:
                                 ('BACKGROUND', (col_idx, min_row_idx), (col_idx, min_row_idx), colors.cyan))
                             marine_style_cmds_viet.append(
                                 ('BACKGROUND', (col_idx, max_row_idx), (col_idx, max_row_idx), colors.pink))
+                                
+                            # Add yellow highlights for extremes
+                            for val, r_idx in data_points:
+                                if param == 'wave_height' and val > 2.5:
+                                    marine_style_cmds_viet.append(('BACKGROUND', (col_idx, r_idx), (col_idx, r_idx), colors.yellow))
                     marine_table_viet.setStyle(TableStyle(marine_style_cmds_viet))
                     elements.append(marine_table_viet)
                     elements.append(Spacer(1, 0.1*inch))
