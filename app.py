@@ -55,8 +55,8 @@ st.title("Weather Reporter")
 
 @st.cache_resource
 def get_weather_logic():
-    # Cache invalidated to pick up generate_historical_excel_report
-    _force_cache_reload_v3 = 43
+    # Increment this dummy variable to force Streamlit to clear cache and reload logic
+    _force_cache_reload_v4 = 44
     api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
     if not api_key_owm:
         try:
@@ -672,7 +672,7 @@ if st.session_state.weather_data:
             units=['s', 's'])
 
     st.markdown("---")
-    st.header("Data Table")
+    st.header("Forecast Data Table")
     if st.session_state.api_source == "Open-Meteo":
         cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain', 'pop', 'dew_point', 'uv_index']
     else:
@@ -831,6 +831,9 @@ if st.session_state.weather_data:
                             st.download_button("Download Historical Excel (.xlsx)", data=excel_bytes, file_name=filename, 
                                              mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                             st.success("✅ Historical Excel generated!")
+                            st.info("💡 Preview of Historical Data (First 5 rows):")
+                            df_hist_preview = pd.DataFrame(hist_data).head(5)
+                            st.dataframe(df_hist_preview)
                         else:
                             st.error("❌ Failed to generate Excel.")
                         
@@ -852,6 +855,9 @@ if st.session_state.weather_data:
                                 pdf_bytes = f.read()
                             st.download_button("Download Historical PDF", data=pdf_bytes, file_name=filename, mime="application/pdf")
                             st.success("✅ Historical PDF generated!")
+                            st.info("💡 Preview of Historical Data (First 5 rows):")
+                            df_hist_preview = pd.DataFrame(hist_data).head(5)
+                            st.dataframe(df_hist_preview)
                         else:
                             st.error("❌ Failed to generate historical PDF.")
                     else:
