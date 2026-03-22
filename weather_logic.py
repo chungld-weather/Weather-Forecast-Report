@@ -1284,7 +1284,7 @@ class WeatherLogic:
                 marine_relevant_keys = ['wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period']
                 valid_marine_data = []
                 consecutive_na_count = 0
-                import math
+
                 for row in marine_data:
                     is_all_na = True
                     for k in marine_relevant_keys:
@@ -1815,7 +1815,7 @@ class WeatherLogic:
                 marine_relevant_keys = ['wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period']
                 valid_marine_data = []
                 consecutive_na_count = 0
-                import math
+
                 for row in marine_data:
                     is_all_na = True
                     for k in marine_relevant_keys:
