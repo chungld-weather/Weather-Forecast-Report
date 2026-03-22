@@ -1289,7 +1289,11 @@ class WeatherLogic:
                     is_all_na = True
                     for k in marine_relevant_keys:
                         val = row.get(k)
-                        if val is not None and not (isinstance(val, float) and math.isnan(val)) and val != 'N/A':
+                        if val is not None:
+                            if isinstance(val, str) and val.strip().lower() in ('n/a', 'nan'):
+                                continue
+                            if isinstance(val, (float, int)) and math.isnan(float(val)):
+                                continue
                             is_all_na = False
                             break
                     if is_all_na:
@@ -1632,7 +1636,7 @@ class WeatherLogic:
                 param_to_col_index = {'temperature': 2, 'humidity': 3, 'wind_speed': 4,
                                       'wind_gust': 5, 'rain': 7, 'pop': 8, 'uv_index': 9}
 
-                if api_source == "OpenMeteo":
+                if api_source in ("Open-Meteo", "MET Norway"):
                     max_entries_for_table = 14 * 24
                 else:
                     max_entries_for_table = 5 * 8
@@ -1816,7 +1820,11 @@ class WeatherLogic:
                     is_all_na = True
                     for k in marine_relevant_keys:
                         val = row.get(k)
-                        if val is not None and not (isinstance(val, float) and math.isnan(val)) and val != 'N/A':
+                        if val is not None:
+                            if isinstance(val, str) and val.strip().lower() in ('n/a', 'nan'):
+                                continue
+                            if isinstance(val, (float, int)) and math.isnan(float(val)):
+                                continue
                             is_all_na = False
                             break
                     if is_all_na:

@@ -710,7 +710,7 @@ if st.session_state.weather_data:
         return styles
 
     format_dict = {}
-    for col in ['Temp (°C)', 'Wind (knots)', 'Gust (knots)', 'Rain (mm)', 'UV']:
+    for col in ['Temp (°C)', 'Wind (knots)', 'Gust (knots)', 'Rain (mm)', 'UV', 'Dewpoint (°C)']:
         if col in df_display.columns:
             format_dict[col] = lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x
     for col in ['Hum (%)', 'PoP (%)']:
