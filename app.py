@@ -348,6 +348,19 @@ if st.session_state.weather_data:
         unsafe_allow_html=True
     )
 
+    location_name = st.session_state.selected_location_name or l_info.get('name', 'Unknown Location')
+    current_desc = current_point.get('description', '')
+    if current_desc:
+        st.markdown(
+            f"<h4 style='color:#ffffff; margin-top:5px;'>{location_name} - {current_desc}</h4>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"<h4 style='color:#ffffff; margin-top:5px;'>{location_name}</h4>",
+            unsafe_allow_html=True
+        )
+
     colC1, colC2, colC3, colC4 = st.columns(4)
     
     # 1. Temperature
@@ -696,7 +709,15 @@ if st.session_state.weather_data:
             pass
         return styles
 
-    styled_df = df_display.style.apply(highlight_extremes, axis=0)
+    format_dict = {}
+    for col in ['Temp (°C)', 'Wind (knots)', 'Gust (knots)', 'Rain (mm)', 'UV']:
+        if col in df_display.columns:
+            format_dict[col] = lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x
+    for col in ['Hum (%)', 'PoP (%)']:
+        if col in df_display.columns:
+            format_dict[col] = lambda x: f"{int(round(x))}" if isinstance(x, (int, float)) else x
+
+    styled_df = df_display.style.format(format_dict).apply(highlight_extremes, axis=0)
     if hasattr(styled_df, 'hide'):
         styled_df = styled_df.hide(axis="index")
     else:
