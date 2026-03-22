@@ -584,6 +584,60 @@ class WeatherLogic:
             print(traceback.format_exc())
             return None
 
+    def generate_historical_excel_report(self, lat, lon, historical_data, location_info, ui_location_name, start_date, end_date):
+        """Generate Historical Excel weather report."""
+        file_name_location = re.sub(r'[\\/*?:"<>|()]+', "", ui_location_name).replace(' ', '_')
+        file_name = f"Historical_Weather_{file_name_location}_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
+
+        try:
+            workbook = xlsxwriter.Workbook(file_name)
+            worksheet = workbook.add_worksheet("Historical Data")
+
+            # Formats
+            bold = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#D7E4BC'})
+            header_format = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#4F81BD', 'font_color': 'white'})
+
+            # General Info
+            worksheet.write('A1', 'Historical Weather Report', bold)
+            worksheet.write('A2', 'Location:', bold)
+            worksheet.write('B2', ui_location_name)
+            worksheet.write('A3', 'Coordinates:', bold)
+            worksheet.write('B3', f"Lat: {lat}, Lon: {lon}")
+            worksheet.write('A4', 'Period:', bold)
+            worksheet.write('B4', f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+
+            # Headers
+            headers = ["Date/Time", "Description", "Temp (°C)", "Humidity (%)",
+                       "Wind Speed (knots)", "Wind Gust (knots)", "Wind Dir", "Rain (mm)", "Cloud Cover (%)", "Pressure (hPa)"]
+            for col, header in enumerate(headers):
+                worksheet.write(5, col, header, header_format)
+
+            # Data
+            for row, item in enumerate(historical_data, start=6):
+                worksheet.write(row, 0, item.get('datetime', 'N/A'))
+                worksheet.write(row, 1, item.get('description', 'N/A'))
+                worksheet.write(row, 2, item.get('temperature', 'N/A'))
+                worksheet.write(row, 3, item.get('humidity', 'N/A'))
+                worksheet.write(row, 4, item.get('wind_speed', 'N/A'))
+                worksheet.write(row, 5, item.get('wind_gust', 'N/A'))
+                worksheet.write(row, 6, item.get('wind_direction', 'N/A'))
+                worksheet.write(row, 7, item.get('rain', 'N/A'))
+                worksheet.write(row, 8, item.get('cloud_cover', 'N/A'))
+                worksheet.write(row, 9, item.get('pressure', 'N/A'))
+
+            # Set column widths
+            for col in range(len(headers)):
+                worksheet.set_column(col, col, 15)
+            worksheet.set_column(0, 0, 20)
+
+            workbook.close()
+            print(f"Historical Excel report generated: {file_name}")
+            return file_name
+        except Exception as e:
+            print(f"Error generating Historical Excel report: {e}")
+            print(traceback.format_exc())
+            return None
+
     def _deg_to_compass(self, degrees):
             if degrees is None or degrees == 'N/A':
                 return 'N/A'

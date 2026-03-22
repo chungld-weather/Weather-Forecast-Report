@@ -799,7 +799,7 @@ if st.session_state.weather_data:
                     st.error("❌ Failed to generate PDF.")
                     
     with colB:
-        st.subheader("Historical & Data Export")
+        st.subheader("Historical Data Export")
         
         export_col1, export_col2 = st.columns(2)
         current_date = datetime.date.today()
@@ -813,20 +813,24 @@ if st.session_state.weather_data:
         col_ex1, col_ex2 = st.columns(2)
         with col_ex1:
             if st.button("Generate Excel Report"):
-                with st.spinner("Generating Excel..."):
-                    # Use professional Excel generator
-                    filename = logic.generate_excel_report(
-                        st.session_state.lat, st.session_state.lon, w_data, l_info,
-                        st.session_state.ui_location_name, st.session_state.api_source, st.session_state.marine_data
+                with st.spinner("Fetching Historical Data & Generating Excel..."):
+                    hist_data, hist_l_info = logic.fetch_open_meteo_historical_weather(
+                        st.session_state.lat, st.session_state.lon, 
+                        hist_from, hist_to
                     )
-                    if filename and os.path.exists(filename):
-                        with open(filename, "rb") as f:
-                            excel_bytes = f.read()
-                        st.download_button("Download Excel (.xlsx)", data=excel_bytes, file_name=filename, 
-                                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                        st.success("✅ Professional Excel generated!")
-                    else:
-                        st.error("❌ Failed to generate Excel.")
+                    if hist_data:
+                        filename = logic.generate_historical_excel_report(
+                            st.session_state.lat, st.session_state.lon, hist_data, hist_l_info,
+                            st.session_state.ui_location_name, hist_from, hist_to
+                        )
+                        if filename and os.path.exists(filename):
+                            with open(filename, "rb") as f:
+                                excel_bytes = f.read()
+                            st.download_button("Download Historical Excel (.xlsx)", data=excel_bytes, file_name=filename, 
+                                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            st.success("✅ Historical Excel generated!")
+                        else:
+                            st.error("❌ Failed to generate Excel.")
                         
         with col_ex2:
             if st.button("Historical PDF Report"):
@@ -834,7 +838,7 @@ if st.session_state.weather_data:
                     # Fetch historical data first
                     hist_data, hist_l_info = logic.fetch_open_meteo_historical_weather(
                         st.session_state.lat, st.session_state.lon, 
-                        hist_from.strftime("%Y-%m-%d"), hist_to.strftime("%Y-%m-%d")
+                        hist_from, hist_to
                     )
                     if hist_data:
                         filename = logic.generate_historical_pdf_report(
