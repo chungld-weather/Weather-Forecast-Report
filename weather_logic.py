@@ -410,14 +410,14 @@ class WeatherLogic:
                     })
             return processed
 
-    def _process_forecast_data_openmeteo(self, hourly_data, local_tz):
+    def _process_forecast_data_openmeteo(self, hourly_data, local_tz, is_historical=False):
         processed = []
         now_local = datetime.now(local_tz)
         times = hourly_data.get('time', [])
         num_times = len(times)
         for i in range(num_times):
             local_time = local_tz.localize(datetime.fromisoformat(times[i]))
-            if now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1):
+            if is_historical or (now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1)):
                 # Use apparent_temperature if available, else fallback to temperature_2m
                 apparent_temp = hourly_data.get(
                     'apparent_temperature', [None]*num_times)[i]
@@ -680,7 +680,7 @@ class WeatherLogic:
             timezone_str = data.get('timezone', DEFAULT_TIMEZONE)
             local_tz = pytz.timezone(timezone_str)
             
-            processed_data = self._process_forecast_data_openmeteo(data.get('hourly', {}), local_tz)
+            processed_data = self._process_forecast_data_openmeteo(data.get('hourly', {}), local_tz, is_historical=True)
             return processed_data, {"timezone": timezone_str}
         except Exception as e:
             print(f"Error fetching historical data: {e}")

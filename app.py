@@ -56,7 +56,7 @@ st.title("Weather Reporter")
 @st.cache_resource
 def get_weather_logic():
     # Cache invalidated to pick up generate_historical_excel_report
-    _force_cache_reload_v2 = 42
+    _force_cache_reload_v3 = 43
     api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
     if not api_key_owm:
         try:
