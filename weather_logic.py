@@ -26,7 +26,26 @@ from datetime import datetime, timedelta, timezone
 import matplotlib
 
 UNITS = {'precipitation': 'mm'}
-VIETNAMESE_FONT_NAME, VIETNAMESE_FONT_NAME_BOLD = 'Helvetica', 'Helvetica-Bold'
+# Font Registration for Vietnamese Support
+try:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    font_regular_path = os.path.join(base_dir, 'NotoSans-Regular.ttf')
+    font_bold_path = os.path.join(base_dir, 'NotoSans-Bold.ttf')
+    
+    if os.path.exists(font_regular_path):
+        pdfmetrics.registerFont(TTFont('NotoSans', font_regular_path))
+        VIETNAMESE_FONT_NAME = 'NotoSans'
+    else:
+        VIETNAMESE_FONT_NAME = 'Helvetica'
+        
+    if os.path.exists(font_bold_path):
+        pdfmetrics.registerFont(TTFont('NotoSans-Bold', font_bold_path))
+        VIETNAMESE_FONT_NAME_BOLD = 'NotoSans-Bold'
+    else:
+        VIETNAMESE_FONT_NAME_BOLD = 'Helvetica-Bold'
+except Exception as e:
+    print(f"Failed to load Vietnamese fonts: {e}")
+    VIETNAMESE_FONT_NAME, VIETNAMESE_FONT_NAME_BOLD = 'Helvetica', 'Helvetica-Bold'
 LOCATION_TIMEZONES = {
     'VN': 'Asia/Ho_Chi_Minh', 'ID': 'Asia/Jakarta', 'MY': 'Asia/Kuala_Lumpur', 'SG': 'Asia/Singapore',
     'TH': 'Asia/Bangkok', 'PH': 'Asia/Manila', 'CN': 'Asia/Shanghai', 'JP': 'Asia/Tokyo',
