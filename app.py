@@ -56,7 +56,7 @@ st.title("Weather Reporter")
 @st.cache_resource
 def get_weather_logic():
     # Increment this dummy variable to force Streamlit to clear cache and reload logic
-    _force_cache_reload_v4 = 44
+    _force_cache_reload_v5 = 45
     api_key_owm = os.environ.get("OPENWEATHERMAP_API_KEY")
     if not api_key_owm:
         try:
@@ -261,13 +261,25 @@ with col_ds:
 with col_btn:
     fetch_btn = st.button("Fetch Data")
 
-# ── Caching API Calls ──────────────────────────────────────────────────────────
-@st.cache_data(ttl=1800, show_spinner=False)
-def get_cached_weather(lat, lon, source):
+# ── Smart Hourly Caching ───────────────────────────────────────────────────────
+# Open-Meteo updates forecasts on the hour. Instead of a fixed TTL, we include
+# the current UTC hour in the cache key so data is automatically invalidated
+# when the clock ticks to the next hour.  The TTL=3600 acts as a safety net.
+
+def _current_hour_key():
+    """Return a string like '2026-03-23T22' that changes every hour (UTC).
+    Used as a cache-key component so Streamlit auto-invalidates at each hour."""
+    now = datetime.datetime.utcnow()
+    return now.strftime("%Y-%m-%dT%H")
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_cached_weather(lat, lon, source, _hour_key):
+    """Fetch weather data; _hour_key ensures cache refreshes every hour."""
     return logic.fetch_weather(lat, lon, source=source)
 
-@st.cache_data(ttl=1800, show_spinner=False)
-def get_cached_marine(lat, lon, timezone_str):
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_cached_marine(lat, lon, timezone_str, _hour_key):
+    """Fetch marine data; _hour_key ensures cache refreshes every hour."""
     return logic._fetch_marine_data_openmeteo(lat, lon, timezone_str)
 
 # ── Fetch Logic ────────────────────────────────────────────────────────────────
@@ -277,7 +289,7 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
         try:
-            w_data, l_info = get_cached_weather(lat, lon, data_source)
+            w_data, l_info = get_cached_weather(lat, lon, data_source, _current_hour_key())
         except Exception as fetch_err:
             import traceback
             st.error(f"Exception during fetch: {fetch_err}")
@@ -286,7 +298,7 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
         m_data = None
         if w_data and l_info and l_info.get('timezone'):
             try:
-                m_data = get_cached_marine(lat, lon, l_info['timezone'])
+                m_data = get_cached_marine(lat, lon, l_info['timezone'], _current_hour_key())
             except Exception as e:
                 print(f"Marine data fetch failed: {e}")
         
