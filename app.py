@@ -284,7 +284,7 @@ with tab1:
     default_loc = locations_data.get("default_location", loc_names[0] if loc_names else "")
     default_idx = loc_names.index(default_loc) if default_loc in loc_names else 0
     selected_from_list = st.selectbox("Select location:", loc_names, index=default_idx)
-    if st.button("Use this location", key="btn_list"):
+    if st.button("Use this location", key="btn_list", use_container_width=True):
         coords = locations_dict[selected_from_list]['coords']
         st.session_state.selected_lat = coords[0]
         st.session_state.selected_lon = coords[1]
@@ -302,7 +302,7 @@ with tab1:
 # ── Tab 2: Geocoding Search ────────────────────────────────────────────────────
 with tab2:
     search_query = st.text_input("Enter location name:", placeholder="e.g. Vung Tau, Ha Noi, Ho Chi Minh City...")
-    if st.button("🔍 Search", key="btn_search"):
+    if st.button("🔍 Search", key="btn_search", use_container_width=True):
         if search_query.strip():
             with st.spinner("Searching..."):
                 try:
@@ -326,7 +326,7 @@ with tab2:
             for r in st.session_state.geocode_results
         ]
         chosen_idx = st.radio("Select a result:", range(len(options)), format_func=lambda i: options[i])
-        if st.button("✅ Confirm this location", key="btn_confirm_search"):
+        if st.button("✅ Confirm this location", key="btn_confirm_search", use_container_width=True):
             r = st.session_state.geocode_results[chosen_idx]
             st.session_state.selected_lat = r["latitude"]
             st.session_state.selected_lon = r["longitude"]
@@ -380,7 +380,7 @@ with tab3:
                 f"(Lat `{st.session_state.selected_lat}`, Lon `{st.session_state.selected_lon}`)"
             )
         with col_btn:
-            if st.button(f"✅ Use this location", key="btn_confirm_map"):
+            if st.button(f"✅ Use this location", key="btn_confirm_map", use_container_width=True):
                 st.session_state.selected_lat = clat
                 st.session_state.selected_lon = clon
                 st.session_state.selected_location_name = f"Custom ({clat}, {clon})"
@@ -408,7 +408,7 @@ with tab4:
                                      value=float(st.session_state.selected_lon or 106.7),
                                      step=0.0001, format="%.5f")
     manual_name = st.text_input("Location name (optional):", placeholder="e.g. Platform X, Block Y...")
-    if st.button("✅ Confirm coordinates", key="btn_manual"):
+    if st.button("✅ Confirm coordinates", key="btn_manual", use_container_width=True):
         st.session_state.selected_lat = manual_lat
         st.session_state.selected_lon = manual_lon
         st.session_state.selected_location_name = manual_name.strip() or f"({manual_lat:.5f}, {manual_lon:.5f})"
@@ -995,7 +995,7 @@ if st.session_state.weather_data:
     colA, colB = st.columns(2)
     
     with colA:
-        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>PDF Report</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>PDF Weather Forecast Report</div></div>', unsafe_allow_html=True)
         pdf_lang = st.radio("PDF Language", ["English", "Vietnamese"], horizontal=True)
         if st.button("Generate PDF Report"):
             with st.spinner("Generating PDF Report..."):
