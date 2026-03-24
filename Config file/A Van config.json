@@ -1,0 +1,53 @@
+{
+    "api_key_openweathermap": "e1a69775e0d7c149a4e2bdb69bb59a82",
+    "dashboard_locations": [
+        "Lan Tay Platform - Block 06.1",
+        "Home - Ho Chi Minh City",
+        "UC Berkeley - San Francisco",
+        "Disneyland - Los Angeles"
+    ],
+    "locations": {
+        "Lan Tay Platform - Block 06.1": {
+            "pdf_name": "Lan Tay Platform - Block 06.1",
+            "coords": [
+                7.5783,
+                108.8694
+            ]
+        },
+        "Home - Ho Chi Minh City": {
+            "pdf_name": "Home - Ho Chi Minh City",
+            "coords": [
+                10.7707,
+                106.6558
+            ]
+        },
+        "UC Berkeley - San Francisco": {
+            "pdf_name": "UC Berkeley - San Francisco",
+            "coords": [
+                37.8730,
+                -122.2633
+            ]
+        },
+        "Disneyland - Los Angeles": {
+            "pdf_name": "Disneyland - Los Angeles",
+            "coords": [
+                34.1369,
+                -118.3533
+            ]
+        },
+        "An Phu Office - An Khanh Ward": {
+            "pdf_name": "An Phu Office - An Khanh Ward",
+            "coords": [
+                10.8094,
+                106.7366
+            ]
+        },
+        "Vung Tau Airport - Vung Tau": {
+            "pdf_name": "Vung Tau Airport - Vung Tau",
+            "coords": [
+                10.3760,
+                107.0932
+            ]
+        }
+    }
+}
