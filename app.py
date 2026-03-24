@@ -213,6 +213,12 @@ STYLE_CODE = """
     [data-testid="stMetricValue"] {
         font-family: 'JetBrains Mono', monospace !important;
     }
+    button[data-baseweb="tab"] {
+        flex: 1 !important;
+        justify-content: center !important;
+        min-width: 150px !important;
+        white-space: nowrap !important;
+    }
 </style>
 """
 st.markdown(STYLE_CODE, unsafe_allow_html=True)
@@ -995,7 +1001,7 @@ if st.session_state.weather_data:
     colA, colB = st.columns(2)
     
     with colA:
-        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>PDF Weather Forecast Report</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>Weather Forecast Report - PDF</div></div>', unsafe_allow_html=True)
         pdf_lang = st.radio("PDF Language", ["English", "Vietnamese"], horizontal=True)
         if st.button("Generate PDF Report"):
             with st.spinner("Generating PDF Report..."):
