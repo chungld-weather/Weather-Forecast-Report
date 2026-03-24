@@ -29,27 +29,169 @@ def get_base64_image(image_path):
 
 st.set_page_config(page_title="Weather Reporter", layout="wide")
 
-st.markdown("""
+# ─── UI Styling ──────────────────────────────────────────────────────────────
+STYLE_CODE = """
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-.stApp {
-    background: linear-gradient(135deg, #000000, #000B58);
-    color: white; /* to ensure text remains readable on dark background */
-}
-
-/* Custom Button Styles */
-div.stButton > button, div.stDownloadButton > button {
-    background: linear-gradient(90deg, #0072ff, #00c6ff);
-    color: white;
-    border: 1px solid transparent;
-    transition: 0.3s;
-}
-div.stButton > button:hover, div.stDownloadButton > button:hover {
-    background: transparent !important;
-    border: 1px solid #00c6ff !important;
-    color: white !important;
-}
+    .stApp {
+        background: linear-gradient(135deg, #000000, #000B58);
+        color: #d1d9e6;
+        font-family: 'Inter', sans-serif;
+    }
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #e8f0fe;
+    }
+    div.stButton > button, div.stDownloadButton > button {
+        background: linear-gradient(135deg, #0072ff, #00c6ff);
+        color: white;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        transition: all 0.2s ease-out;
+    }
+    div.stButton > button:hover, div.stDownloadButton > button:hover {
+        background: linear-gradient(135deg, #005bcc, #00a3cc) !important;
+        border: 1px solid #00c6ff !important;
+        color: white !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0, 114, 255, 0.35);
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 22px 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0, 114, 255, 0.12);
+        border-color: rgba(0, 198, 255, 0.15);
+    }
+    .glass-card .card-icon {
+        font-size: 28px;
+        margin-bottom: 4px;
+        display: block;
+        text-align: center;
+    }
+    .glass-card .card-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #8fa6c0;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+    .glass-card .card-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: #e8f0fe;
+        text-align: center;
+    }
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #e8f0fe;
+        margin-top: 40px;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(0, 114, 255, 0.25);
+    }
+    .section-header svg {
+        width: 26px;
+        height: 26px;
+        color: #00c6ff;
+        flex-shrink: 0;
+    }
+    .gradient-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0, 198, 255, 0.3), transparent);
+        margin: 36px 0;
+        border: none;
+    }
+    div[data-baseweb="tab-list"] {
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    button[data-baseweb="tab"] {
+        border-radius: 8px !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+        color: #8fa6c0 !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background: linear-gradient(135deg, #0072ff, #00c6ff) !important;
+        color: white !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #e8f0fe !important;
+    }
+    .weather-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 18px;
+        border-radius: 24px;
+        background: rgba(0, 200, 255, 0.08);
+        border: 1px solid rgba(0, 200, 255, 0.18);
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: #a0d8ff;
+    }
+    .weather-badge .live-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #00c6ff;
+        animation: dot-blink 2s ease-in-out infinite;
+    }
+    @keyframes dot-blink {
+        0%, 100% { opacity: 1; box-shadow: 0 0 4px #00c6ff; }
+        50% { opacity: 0.3; box-shadow: none; }
+    }
+    .export-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 20px;
+    }
+    .export-card-title {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        color: #e8f0fe;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .export-card-title svg {
+        width: 20px; height: 20px;
+        color: #00c6ff;
+    }
+    [data-testid="stMetricValue"] {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(STYLE_CODE, unsafe_allow_html=True)
+
 
 st.title("Weather Reporter")
 
@@ -91,12 +233,14 @@ if "weather_data" not in st.session_state:
     st.session_state.lon = None
     st.session_state.api_source = None
     st.session_state.ui_location_name = None
+    st.session_state.fetch_error = False
 if "selected_lat" not in st.session_state:
     st.session_state.selected_lat = None
     st.session_state.selected_lon = None
     st.session_state.selected_location_name = None
 if "geocode_results" not in st.session_state:
     st.session_state.geocode_results = []
+
 
 # ─── Location Section ─────────────────────────────────────────────────────────
 st.header("Search Location")
@@ -246,7 +390,7 @@ with tab4:
         st.success(f"✅ Confirmed: **{st.session_state.selected_location_name}**")
 
 # ── Confirmed location display + Fetch ────────────────────────────────────────
-st.markdown("---")
+st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
 if st.session_state.selected_lat:
     st.markdown(
         f"📍 **Selected location:** {st.session_state.selected_location_name} "
@@ -283,18 +427,21 @@ def get_cached_marine(lat, lon, timezone_str, _hour_key):
     return logic._fetch_marine_data_openmeteo(lat, lon, timezone_str)
 
 # ── Fetch Logic ────────────────────────────────────────────────────────────────
-if fetch_btn or (not st.session_state.weather_data and st.session_state.selected_lat):
+if fetch_btn or (not st.session_state.weather_data and st.session_state.selected_lat and not st.session_state.fetch_error):
     lat = st.session_state.selected_lat
     lon = st.session_state.selected_lon
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
         try:
             w_data, l_info = get_cached_weather(lat, lon, data_source, _current_hour_key())
+            st.session_state.fetch_error = False
         except Exception as fetch_err:
             import traceback
             st.error(f"Exception during fetch: {fetch_err}")
             print(f"FETCH EXCEPTION: {traceback.format_exc()}")
             w_data, l_info = None, None
+            st.session_state.fetch_error = True
+        
         m_data = None
         if w_data and l_info and l_info.get('timezone'):
             try:
@@ -306,13 +453,13 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
             st.session_state.weather_data = w_data
             st.session_state.location_info = l_info
             st.session_state.marine_data = m_data
-            print(f"DEBUG MARINE: m_data type={type(m_data).__name__}, len={len(m_data) if m_data else 0}, api_source='{data_source}'")
             st.session_state.lat = lat
             st.session_state.lon = lon
             st.session_state.api_source = data_source
             st.session_state.ui_location_name = location
             st.success("Data fetched successfully!")
         else:
+            st.session_state.fetch_error = True
             err_detail = f"lat={lat}, lon={lon}, w_data type={type(w_data).__name__}"
             if w_data is not None:
                 err_detail += f", w_data len={len(w_data) if hasattr(w_data, '__len__') else 'N/A'}"
@@ -334,13 +481,14 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
 
 
 
+
 if st.session_state.weather_data:
     w_data = st.session_state.weather_data
     l_info = st.session_state.location_info
     
     # Middle Section
     # ── Current Weather Condition ──────────────────────────────────────────────────
-    st.header("⚡ Current Weather Condition")
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z"/></svg>Current Weather Condition</div>', unsafe_allow_html=True)
     
     # find closest hourly data to now
     import pytz
@@ -357,8 +505,8 @@ if st.session_state.weather_data:
     utc_label = f"UTC{utc_offset[:3]}:{utc_offset[3:]}"  # e.g. UTC+07:00
     local_time_str = now_local.strftime("%H:%M, %d %b %Y")
     st.markdown(
-        f"<span style='font-size:14px; color:#a0d8ff;'>🕐 Local time at location: "
-        f"<b>{local_time_str}</b> &nbsp;·&nbsp; {tz_name} ({utc_label})</span>",
+        f'<div class="weather-badge"><span class="live-dot"></span>Local time: '
+        f'<strong>{local_time_str}</strong> · {tz_name} ({utc_label})</div>',
         unsafe_allow_html=True
     )
 
@@ -378,33 +526,29 @@ if st.session_state.weather_data:
     colC1, colC2, colC3, colC4 = st.columns(4)
     
     # 1. Temperature
-    temp_b64 = get_base64_image("icons/temp.png")
-    colC1.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
     curr_temp = current_point.get('temperature')
-    colC1.metric("Temperature", f"{curr_temp:.1f}°C" if curr_temp is not None else "N/A")
+    temp_val = f"{curr_temp:.1f}°C" if curr_temp is not None else "N/A"
+    colC1.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></span><div class="card-label">Temperature</div><div class="card-value">{temp_val}</div></div>', unsafe_allow_html=True)
     
     # 2. Wind Speed
-    wind_b64 = get_base64_image("icons/wind.png")
-    colC2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
     curr_wind = current_point.get('wind_speed')
-    colC2.metric("Wind Speed", f"{curr_wind:.1f} knots" if curr_wind is not None else "N/A")
+    wind_val = f"{curr_wind:.1f} kt" if curr_wind is not None else "N/A"
+    colC2.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></span><div class="card-label">Wind Speed</div><div class="card-value">{wind_val}</div></div>', unsafe_allow_html=True)
     
     # 3. Rain
-    rain_b64 = get_base64_image("icons/rain.png")
-    colC3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
     curr_rain = current_point.get('rain')
-    colC3.metric("Rain", f"{curr_rain:.1f} mm" if curr_rain is not None else "N/A")
+    rain_val = f"{curr_rain:.1f} mm" if curr_rain is not None else "N/A"
+    colC3.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4dabf7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></span><div class="card-label">Rain</div><div class="card-value">{rain_val}</div></div>', unsafe_allow_html=True)
     
     # 4. UV Index
-    uv_b64 = get_base64_image("icons/UV.png")
-    colC4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
     curr_uv = current_point.get('uv_index')
-    colC4.metric("UV Index", f"{curr_uv:.1f}" if curr_uv is not None else "N/A")
+    uv_val = f"{curr_uv:.1f}" if curr_uv is not None else "N/A"
+    colC4.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffd43b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span><div class="card-label">UV Index</div><div class="card-value">{uv_val}</div></div>', unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
     
     # ── Precipitation Map ──────────────────────────────────────────────────────────
-    st.header("🗺️ Precipitation Map")
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>Precipitation Map</div>', unsafe_allow_html=True)
     windy_url = f"https://embed.windy.com/embed2.html?lat={st.session_state.lat}&lon={st.session_state.lon}&zoom=5&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=1&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1"
     
     logo_b64 = get_base64_image("Pictures/Logo.png")
@@ -424,10 +568,10 @@ if st.session_state.weather_data:
     else:
         st.components.v1.iframe(windy_url, height=500, scrolling=True)
     
-    st.markdown("---")
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
     
     # ── Weather Forecast Summary ──────────────────────────────────────────────────
-    st.header("📊 Weather Forecast Summary")
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>Weather Forecast Summary</div>', unsafe_allow_html=True)
     
     # Calculate summary from forecast data
     temp_vals = [item.get('temperature') for item in w_data if isinstance(item.get('temperature'), (int, float))]
@@ -444,24 +588,20 @@ if st.session_state.weather_data:
     
     colS1, colS2, colS3, colS4 = st.columns(4)
     
-    colS1.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{temp_b64}' width='55'></div>", unsafe_allow_html=True)
-    colS1.metric("Temp (Min-Max)", f"{temp_min} - {temp_max}")
+    colS1.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></span><div class="card-label">Temp (Min–Max)</div><div class="card-value">{temp_min} – {temp_max}</div></div>', unsafe_allow_html=True)
     
-    colS2.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{wind_b64}' width='55'></div>", unsafe_allow_html=True)
-    colS2.metric("Wind (Min-Max)", f"{wind_min} - {wind_max} knots")
+    colS2.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></span><div class="card-label">Wind (Min–Max)</div><div class="card-value">{wind_min} – {wind_max} kt</div></div>', unsafe_allow_html=True)
     
-    colS3.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{rain_b64}' width='55'></div>", unsafe_allow_html=True)
-    colS3.metric("Rain (Max)", rain_max)
+    colS3.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4dabf7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></span><div class="card-label">Rain (Max)</div><div class="card-value">{rain_max}</div></div>', unsafe_allow_html=True)
     
-    colS4.markdown(f"<div style='text-align: center; margin-bottom: -15px;'><img src='data:image/png;base64,{uv_b64}' width='55'></div>", unsafe_allow_html=True)
-    colS4.metric("UV Index (Max)", uv_max)
+    colS4.markdown(f'<div class="glass-card"><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffd43b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span><div class="card-label">UV Index (Max)</div><div class="card-value">{uv_max}</div></div>', unsafe_allow_html=True)
     
     current_time_str = now_local.strftime("%Y-%m-%d %H:%M:%S")
     st.markdown(f"**Location Info:** {l_info.get('name')} | **Timezone:** {l_info.get('timezone')} | **Sunrise:** {l_info.get('sunrise')} | **Sunset:** {l_info.get('sunset')} | **Local Time:** {current_time_str}")
 
     # Sidebar Table
     # Bottom Section
-    st.header("Charts")
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Charts</div>', unsafe_allow_html=True)
     df = pd.DataFrame(w_data)
 
     def plot_custom_chart(df_plot, title, cols, colors, units=None, descriptions=None, use_secondary_y=False):
@@ -683,8 +823,8 @@ if st.session_state.weather_data:
             ['wave_period', 'swell_wave_period'], ['cyan', '#FF00FF'],
             units=['s', 's'])
 
-    st.markdown("---")
-    st.header("Forecast Data Table")
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>Forecast Data Table</div>', unsafe_allow_html=True)
     if st.session_state.api_source == "Open-Meteo":
         cols = ['datetime', 'description', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain', 'pop', 'dew_point', 'uv_index']
     else:
@@ -710,15 +850,16 @@ if st.session_state.weather_data:
     
     def highlight_extremes(s):
         styles = [''] * len(s)
+        extreme_style = 'background-color: rgba(255, 107, 107, 0.25); color: #ffa0a0; font-weight: 600;'
         try:
             if s.name == 'Temp (°C)':
-                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 37 else '' for v in s]
+                styles = [extreme_style if type(v) in (int, float) and v > 37 else '' for v in s]
             elif s.name == 'Wind (knots)':
-                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 25 else '' for v in s]
+                styles = [extreme_style if type(v) in (int, float) and v > 25 else '' for v in s]
             elif s.name == 'Rain (mm)':
-                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 0.5 else '' for v in s]
+                styles = [extreme_style if type(v) in (int, float) and v > 0.5 else '' for v in s]
             elif s.name == 'UV':
-                styles = ['background-color: yellow; color: black;' if type(v) in (int, float) and v > 10 else '' for v in s]
+                styles = [extreme_style if type(v) in (int, float) and v > 10 else '' for v in s]
         except Exception:
             pass
         return styles
@@ -745,38 +886,49 @@ if st.session_state.weather_data:
 .table-container {{
     max-height: 500px;
     overflow-y: auto;
-    border: 1px solid #444;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(8px);
 }}
 .custom-table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 15px; 
-    color: white;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #d1d9e6;
 }}
 .custom-table thead th {{
     position: sticky;
     top: 0;
-    background-color: #333;
+    background: rgba(0, 114, 255, 0.15);
+    color: #e8f0fe;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     z-index: 10;
-    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 }}
 .custom-table th, .custom-table td {{
     padding: 10px 14px;
-    border: 1px solid #444;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     text-align: left;
 }}
-/* Adjust Description column width (2nd col) */
+.custom-table tbody tr:nth-child(even) {{
+    background: rgba(255, 255, 255, 0.02);
+}}
 .custom-table th:nth-child(2), .custom-table td:nth-child(2) {{
     min-width: 180px;
 }}
-/* Adjust Wind Direction column width (7th col) */
 .custom-table th:nth-child(7), .custom-table td:nth-child(7) {{
     min-width: 60px;
     max-width: 80px;
 }}
 .custom-table tr:hover {{
-    background-color: rgba(0, 255, 255, 0.1) !important;
+    background-color: rgba(0, 198, 255, 0.08) !important;
 }}
 </style>
 <div class="table-container">
@@ -785,11 +937,12 @@ if st.session_state.weather_data:
 """
     st.markdown(html_template, unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Export Reports</div>', unsafe_allow_html=True)
     colA, colB = st.columns(2)
     
     with colA:
-        st.subheader("PDF Report")
+        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>PDF Report</div></div>', unsafe_allow_html=True)
         pdf_lang = st.radio("PDF Language", ["English", "Vietnamese"], horizontal=True)
         if st.button("Generate PDF Report"):
             with st.spinner("Generating PDF Report..."):
@@ -813,7 +966,7 @@ if st.session_state.weather_data:
                     st.error("❌ Failed to generate PDF.")
                     
     with colB:
-        st.subheader("Historical Data Export")
+        st.markdown('<div class="export-card"><div class="export-card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/></svg>Historical Data Export</div></div>', unsafe_allow_html=True)
         
         export_col1, export_col2 = st.columns(2)
         current_date = datetime.date.today()
@@ -876,7 +1029,7 @@ if st.session_state.weather_data:
                         st.error("❌ Failed to fetch historical data.")
 
     # Additional export for raw CSV
-    st.markdown("---")
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
     if st.button("Export Raw CSV Data"):
         csv_data = df.to_csv(index=False).encode('utf-8')
         st.download_button(

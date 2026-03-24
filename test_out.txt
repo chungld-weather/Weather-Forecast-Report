@@ -1,0 +1,13 @@
+﻿=== Fetching weather data ===
+Weather: 313 records
+Timezone: Asia/Ho_Chi_Minh
+
+=== Fetching marine data ===
+Marine: type=list, len=336
+First record keys: ['datetime_obj', 'datetime', 'wave_height', 'wave_direction', 'wave_period', 'sea_level', 'wind_wave_height', 'wind_wave_direction', 'wind_wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period']
+First record sample: wave_height=0.64, wave_period=4.05
+
+=== Testing PDF generation ===
+DEBUG PDF MARINE: api_source='Open-Meteo', marine_data type=list, len=336
+PDF report generated: Weather_Report_Open-Meteo_Rong_Doi_Platform_20260321_2330.pdf
+PDF generated: 61 bytes
