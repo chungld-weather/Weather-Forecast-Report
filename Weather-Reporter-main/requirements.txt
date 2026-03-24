@@ -1,0 +1,11 @@
+streamlit
+pandas
+matplotlib
+reportlab
+python-dotenv
+requests
+pytz
+xlsxwriter
+plotly
+folium
+streamlit-folium
