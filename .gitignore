@@ -8,9 +8,3 @@ config.json
 venv/
 env/
 dist/
-.agents/
-Weather-Reporter-main/
-face-swap
-temp.txt
-test_out.txt
-*.spec
