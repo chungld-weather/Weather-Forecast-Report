@@ -185,6 +185,31 @@ STYLE_CODE = """
         width: 20px; height: 20px;
         color: #00c6ff;
     }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 2px solid #00c6ff !important;
+        outline-offset: 2px !important;
+    }
+    .skeleton-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 22px 20px;
+        animation: pulse 1.5s ease-in-out infinite;
+        height: 104px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 12px;
+    }
+    .skeleton-line {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
     [data-testid="stMetricValue"] {
         font-family: 'JetBrains Mono', monospace !important;
     }
@@ -432,6 +457,17 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
     lon = st.session_state.selected_lon
     location = st.session_state.selected_location_name
     with st.spinner("Fetching data..."):
+        _ph = st.empty()
+        with _ph.container():
+            cols_ph = st.columns(4)
+            for c in cols_ph:
+                c.markdown("""
+                <div class="skeleton-card">
+                    <div class="skeleton-line" style="width: 70%;"></div>
+                    <div class="skeleton-line" style="width: 40%;"></div>
+                </div>
+                """, unsafe_allow_html=True)
+                
         try:
             w_data, l_info = get_cached_weather(lat, lon, data_source, _current_hour_key())
             st.session_state.fetch_error = False
@@ -448,6 +484,8 @@ if fetch_btn or (not st.session_state.weather_data and st.session_state.selected
                 m_data = get_cached_marine(lat, lon, l_info['timezone'], _current_hour_key())
             except Exception as e:
                 print(f"Marine data fetch failed: {e}")
+                
+        _ph.empty()
         
         if lat and lon and w_data:
             st.session_state.weather_data = w_data
@@ -571,7 +609,16 @@ if st.session_state.weather_data:
     st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
     
     # ── Weather Forecast Summary ──────────────────────────────────────────────────
-    st.markdown('<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>Weather Forecast Summary</div>', unsafe_allow_html=True)
+    if st.session_state.api_source == "Open-Meteo":
+        summary_title = "Weather Forecast Summary - For Next 14 Days"
+    elif st.session_state.api_source == "OpenWeatherMap":
+        summary_title = "Weather Forecast Summary - For Next 05 Days"
+    elif st.session_state.api_source == "MET Norway":
+        summary_title = "Weather Forecast Summary - For Next 10 Days"
+    else:
+        summary_title = "Weather Forecast Summary"
+        
+    st.markdown(f'<div class="section-header"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>{summary_title}</div>', unsafe_allow_html=True)
     
     # Calculate summary from forecast data
     temp_vals = [item.get('temperature') for item in w_data if isinstance(item.get('temperature'), (int, float))]
@@ -717,10 +764,10 @@ if st.session_state.weather_data:
                 tickangle=-45,
                 showgrid=True,
                 gridcolor='rgba(255, 255, 255, 0.05)',
-                tickfont=dict(size=13, color='#A0A0B0'),
+                tickfont=dict(size=14, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             ),
-            legend=dict(font=dict(size=13, color='#E0E0E0')),
+            legend=dict(font=dict(size=14, color='#E0E0E0')),
             plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
             paper_bgcolor='rgba(0,0,0,0)', # Transparent background
             hovermode="x unified",
@@ -732,7 +779,7 @@ if st.session_state.weather_data:
                 title=f"{cols[0]} ({units[0]})",
                 showgrid=True,
                 gridcolor='rgba(255, 255, 255, 0.05)',
-                tickfont=dict(size=13, color='#A0A0B0'),
+                tickfont=dict(size=14, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             )
             # Center the line for temperature or rain to make it clearer
@@ -746,7 +793,7 @@ if st.session_state.weather_data:
             layout_kwargs['yaxis2'] = dict(
                 title=f"{cols[1]} ({units[1]})",
                 showgrid=False,
-                tickfont=dict(size=13, color='#A0A0B0'),
+                tickfont=dict(size=14, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             )
         else:
@@ -754,15 +801,30 @@ if st.session_state.weather_data:
                 range=[None, y_max_range] if y_max_range is not None else None,
                 showgrid=True,
                 gridcolor='rgba(255, 255, 255, 0.05)',
-                tickfont=dict(size=13, color='#A0A0B0'),
+                tickfont=dict(size=14, color='#A0A0B0'),
                 title_font=dict(size=14, color='#E0E0E0')
             )
 
         fig.update_layout(**layout_kwargs)
         
+        # Chart Enhancements
+        try:
+            days = pd.Series(df_plot.index).dt.floor('D').unique()
+            for day in days:
+                fig.add_vline(x=day, line_width=1, line_dash="dash", line_color="rgba(255,255,255,0.15)")
+                
+            if 'now_local' in globals():
+                if df_plot.index.tzinfo is None:
+                    current_time = now_local.replace(tzinfo=None)
+                else:
+                    current_time = now_local
+                if df_plot.index.min() <= current_time <= df_plot.index.max():
+                    fig.add_vline(x=current_time, line_width=2, line_dash="solid", line_color="#00c6ff", annotation_text="Now", annotation_position="top left", annotation_font_size=10, annotation_font_color="#00c6ff")
+        except Exception:
+            pass
+        
         st.plotly_chart(fig, width="stretch")
 
-    st.subheader("Temperature & Humidity")
     # Swapped colors so Temperature is hotpink (#FF00FF) and Humidity is cyan
     plot_custom_chart(df.set_index('datetime'), "Temperature & Humidity",
         ['temperature', 'humidity'], ['#FF00FF', 'cyan'],
@@ -770,19 +832,16 @@ if st.session_state.weather_data:
     
     # Wind: show combined chart only if gust has valid data, else just Wind Speed
     if 'wind_gust' in df.columns and df['wind_gust'].dropna().any():
-        st.subheader("Wind Speed & Gust")
         plot_custom_chart(df.set_index('datetime'), "Wind Speed & Gust",
             ['wind_speed', 'wind_gust'], ['cyan', '#FF00FF'],
             units=['knots', 'knots'])
     else:
-        st.subheader("Wind Speed")
         plot_custom_chart(df.set_index('datetime'), "Wind Speed",
             ['wind_speed'], ['cyan'],
             units=['knots'])
     
     # Rain & PoP: show combined only if pop has valid data
     if 'pop' in df.columns and df['pop'].dropna().any():
-        st.subheader("Rain & PoP")
         rain_cols = ['rain', 'pop'] if 'rain' in df.columns else ['pop']
         rain_units = ['mm/h', '%'] if 'rain' in df.columns else ['%']
         plot_custom_chart(df.set_index('datetime'), "Rain & PoP",
@@ -790,35 +849,29 @@ if st.session_state.weather_data:
             units=rain_units, use_secondary_y=True)
         st.caption("Note: PoP = Probability of Precipitation")
     elif 'rain' in df.columns:
-        st.subheader("Rain")
         plot_custom_chart(df.set_index('datetime'), "Rain",
             ['rain'], ['cyan'],
             units=['mm/h'])
     
     if 'cloud_cover' in df.columns:
-        st.subheader("Cloud Cover & Weather Description")
         plot_custom_chart(df.set_index('datetime'), "Cloud Cover & Weather Description",
             ['cloud_cover'], ['cyan'], units=['%'], 
             descriptions=df['description'].tolist())
         
     if 'dew_point' in df.columns and df['dew_point'].dropna().any():
-        st.subheader("Dew Point Temperature")
         plot_custom_chart(df.set_index('datetime'), "Dew Point Temperature",
             ['dew_point'], ['cyan'], units=['°C'])
         
     if 'uv_index' in df.columns and df['uv_index'].dropna().any():
-        st.subheader("UV Index")
         plot_custom_chart(df.set_index('datetime'), "UV Index",
             ['uv_index'], ['#FF00FF'], units=[''])
         
     if st.session_state.api_source == "Open-Meteo" and st.session_state.marine_data:
         df_marine = pd.DataFrame(st.session_state.marine_data)
-        st.subheader("Wave & Swell Height")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Height",
             ['wave_height', 'swell_wave_height'], ['cyan', '#FF00FF'],
             units=['m', 'm'])
         
-        st.subheader("Wave & Swell Period")
         plot_custom_chart(df_marine.set_index('datetime'), "Wave Period",
             ['wave_period', 'swell_wave_period'], ['cyan', '#FF00FF'],
             units=['s', 's'])
@@ -979,7 +1032,7 @@ if st.session_state.weather_data:
             
         col_ex1, col_ex2 = st.columns(2)
         with col_ex1:
-            if st.button("Generate Excel Report"):
+            if st.button("Historical Excel Report"):
                 with st.spinner("Fetching Historical Data & Generating Excel..."):
                     hist_data, hist_l_info = logic.fetch_open_meteo_historical_weather(
                         st.session_state.lat, st.session_state.lon, 
