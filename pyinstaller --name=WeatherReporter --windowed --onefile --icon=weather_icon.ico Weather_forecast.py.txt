@@ -1,5 +1,0 @@
-pyinstaller --onedir --windowed --icon=weather_icon.ico --add-data "weather_icon.ico;." Weather_Reporter_18Jun.py
-
-pyinstaller --noconfirm --onedir --windowed --add-data "icons;icons" --add-data "Pictures;Pictures" --add-data "NotoSans-Regular.ttf;."--add-data "NotoSans-Bold.ttf;."--add-data "config.json;." Weather_Reporter_18Jun.py
-
-pyinstaller --name=WeatherReporter --windowed --onefile --icon=weather_icon.ico --add-data weather_icon.ico;. Weather_report_03Jun.py
