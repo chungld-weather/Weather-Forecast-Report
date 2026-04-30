@@ -418,18 +418,15 @@ class WeatherLogic:
         for i in range(num_times):
             local_time = local_tz.localize(datetime.fromisoformat(times[i]))
             if is_historical or (now_local - timedelta(hours=1) <= local_time <= now_local + timedelta(days=14, hours=1)):
-                # Use apparent_temperature if available, else fallback to temperature_2m
-                apparent_temp = hourly_data.get(
-                    'apparent_temperature', [None]*num_times)[i]
-                if apparent_temp is None:
-                    apparent_temp = hourly_data.get(
-                        'temperature_2m', [None]*num_times)[i]
+                # Use raw temperature_2m value from Open-Meteo
+                temperature_val = hourly_data.get(
+                    'temperature_2m', [None]*num_times)[i]
                 rain = (hourly_data.get('rain', [0]*num_times)[i] or 0) + (hourly_data.get('showers',
                                                                                 [0]*num_times)[i] or 0) + (hourly_data.get('snowfall', [0]*num_times)[i] or 0)
                 processed.append({
                     'datetime_obj': local_time, 'datetime': local_time.strftime('%Y-%m-%d %H:%M'),
                     'description': WMO_WEATHER_CODES_EN.get(hourly_data.get('weather_code', [None]*num_times)[i], 'N/A'),
-                    'temperature': apparent_temp,  # Apparent temperature
+                    'temperature': temperature_val,
                     'humidity': hourly_data.get('relative_humidity_2m', [None]*num_times)[i],
                     'pressure': hourly_data.get('pressure_msl', [None]*num_times)[i],
                     'wind_speed': hourly_data.get('wind_speed_10m', [None]*num_times)[i], 'wind_gust': hourly_data.get('wind_gusts_10m', [None]*num_times)[i],
