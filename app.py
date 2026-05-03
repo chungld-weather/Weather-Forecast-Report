@@ -610,11 +610,8 @@ if st.session_state.weather_data:
         windy_html = f"""
         <div style="position: relative; width: 100%; height: 500px; overflow: hidden; border-radius: 4px;">
             <iframe src="{windy_url}" width="100%" height="100%" frameborder="0" style="border:0; pointer-events: auto;"></iframe>
-            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 9999; 
-                        background-color: rgba(255, 255, 255, 0.9); padding: 1px 1px; border-bottom-left-radius: 1px; 
-                        border-bottom-right-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.3);
-                        display: flex; justify-content: center; align-items: center; pointer-events: none;">
-                <img src="data:image/png;base64,{logo_b64}" style="width: 150px; height: 67.5px; object-fit: contain;">
+            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; justify-content: center; align-items: center; pointer-events: none;">
+                <img src="data:image/png;base64,{logo_b64}" style="width: 150px; height: 67.5px; object-fit: contain; border: none; background: none; display: block;">
             </div>
         </div>
         """
