@@ -614,7 +614,7 @@ if st.session_state.weather_data:
                         background-color: rgba(255, 255, 255, 0.9); padding: 1px 1px; border-bottom-left-radius: 1px; 
                         border-bottom-right-radius: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.3);
                         display: flex; justify-content: center; align-items: center; pointer-events: none;">
-                <img src="data:image/png;base64,{logo_b64}" style="width: 100px; height: 45px; object-fit: contain;">
+                <img src="data:image/png;base64,{logo_b64}" style="width: 150px; height: 67.5px; object-fit: contain;">
             </div>
         </div>
         """
