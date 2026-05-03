@@ -238,17 +238,27 @@ def get_weather_logic():
             pass
     config = load_config()
     if not api_key_owm:
-        api_key_owm = config.get("api_keys", {}).get("openweathermap", "")
+        api_key_owm = config.get("api_keys", {}).get("openweathermap", "") or config.get("api_key_openweathermap", "")
     return WeatherLogic(api_key=api_key_owm), config
 
 @st.cache_data
 def load_locations():
-    """Load location list from locations.json (committed to git — no secrets inside)."""
+    """Load location list from config_LDC.json when present, otherwise fall back to locations.json."""
     import json
-    loc_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locations.json")
-    if os.path.exists(loc_file):
-        with open(loc_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "config_LDC.json"),
+        os.path.join(base_dir, "locations.json")
+    ]
+    for loc_file in candidates:
+        if os.path.exists(loc_file):
+            try:
+                with open(loc_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and "locations" in data:
+                    return data
+            except (FileNotFoundError, json.JSONDecodeError, OSError):
+                continue
     return {"locations": {}, "default_location": "", "dashboard_locations": []}
 
 logic, config_data = get_weather_logic()

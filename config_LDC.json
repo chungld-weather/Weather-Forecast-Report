@@ -1,0 +1,44 @@
+{
+  "api_key_openweathermap": "e1a69775e0d7c149a4e2bdb69bb59a82",
+  "api_key_weatherapi": "",
+  "dashboard_locations": [
+    "SV-DN Platform",
+    "Home - Binh Loi",
+    "Vung Tau Airport",
+    "Phu Yen"
+  ],
+  "locations": {
+    "Binh Loi": {
+      "pdf_name": "Binh Loi",
+      "coords": [
+        10.835308,
+        106.701594
+      ],
+      "marine_forecast": false
+    },
+    "SV-DN": {
+      "pdf_name": "SV-DN",
+      "coords": [
+        7.6733373078814795,
+        107.87677040551587
+      ],
+      "marine_forecast": true
+    },
+    "Vung Tau Airport - Vung Tau": {
+      "pdf_name": "Vung Tau Airport - Vung Tau",
+      "coords": [
+        10.376,
+        107.0932
+      ],
+      "marine_forecast": false
+    },
+    "Phu Yen": {
+      "pdf_name": "Phu Yen",
+      "coords": [
+        13.211902143197166,
+        109.17861374304559
+      ],
+      "marine_forecast": false
+    }
+  }
+}
